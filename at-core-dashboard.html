@@ -1,0 +1,696 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="schema-helpers-import.html">
+<link rel="import" href="../at-core-resize-sensor/at-core-resize-sensor.html">
+<link rel="import" href="../at-theme/at-theme.html">
+
+<dom-module id="at-core-dashboard">
+  <template>
+    <style include="at-form-common"></style>
+    <style>
+      .at-core-dashboard-wrapper {
+        position: relative;
+        margin-top: 16px;
+      }
+
+      :host(:focus) {
+        outline: none;
+      }
+
+      #insertPoint {
+        position: relative;
+      }
+
+      at-form-checkbox {
+        min-height: 76px;
+      }
+      /* workaround for IE11 flexbox min-height bug */
+
+      _:-ms-fullscreen,
+      at-form-checkbox::before {
+        content: "";
+        display: inline-block;
+        min-height: 38px;
+        visibility: hidden;
+      }
+
+      .vertical .col-6.at-form-checkbox {
+        min-height: 32px;
+        margin-bottom: 18px;
+      }
+
+      .vertical .col-6 at-form-checkbox {
+        min-height: 32px;
+      }
+      /* workaround for IE11 flexbox min-height bug */
+
+      _:-ms-fullscreen,
+      .vertical .col-6 at-form-checkbox::before {
+        content: "";
+        display: inline-block;
+        min-height: 16px;
+        visibility: hidden;
+      }
+    </style>
+    <div class="at-core-dashboard-wrapper">
+      <at-core-resize-sensor id="resizeSensor"></at-core-resize-sensor>
+      <div class="clear-float"></div>
+      <div id="insertPoint"></div>
+    </div>
+    <content></content>
+  </template>
+</dom-module>
+
+<script>
+  'use strict';
+  Polymer({
+    is: 'at-core-dashboard',
+    hostAttributes: {
+      tabindex: 0
+    },
+    properties: {
+      /**
+       * Specification of elements that should appear on the form.<br/>
+       * Provide either an object or string.<br/>
+       * List property definitions inside properties object.<br/>
+       *
+       * @property schema
+       * @type Stirng or Object
+       * @default { properties: {} }
+       */
+      schema: {
+        type: Object,
+        value: function() {
+          var result = {
+            properties: {}
+          };
+          return result;
+        },
+        observer: 'schemaChanged'
+      },
+      data: {
+        type: Object,
+        value: function() {
+          return {};
+        },
+        observer: 'dataChanged'
+      },
+      files: {
+        type: Object,
+        value: function() {
+          return {};
+        },
+        observer: 'filesChanged'
+      },
+      valid: {
+        type: Boolean,
+        notify: true,
+        value: true,
+        readOnly: true
+      },
+      disabled: {
+        type: Boolean,
+        value: false,
+        observer: 'disabledChanged'
+      },
+      /**
+       * at-core-dashboard can now have a one column or two column layout <br/>
+       * by default a one column layout is used but a two column layout can be specified <br/>
+       * layout = 'horizontal' renders the two column layout <br/>
+       * layout = 'vertical' renders the single column layout <br/>
+       *
+       * @property layout
+       * @type string
+       * @default vertical
+       */
+      // added for #684
+      layout: {
+        type: String,
+        value: "vertical",
+        observer: 'layoutChanged',
+        xtype: "enum",
+        xvaluelist: "horizontal,vertical"
+      },
+      /**
+       * When true hides all elements.
+       * @property hide
+       * @type Boolean
+       * @default false
+       */
+      hide: {
+        type: Boolean,
+        value: false,
+        observer: 'hideChanged'
+      }
+    },
+    set valid(newValue) {},
+    _isReady: false,
+    /**
+     * This flag is used to prevent value-changed event listener on form elements
+     * from updating data property when element's value is supplied from data property
+     */
+    _isBatchUpdate: false,
+    _unsupported_types: [],
+    elementsToValidate: [],
+    ready: function() {
+      this.elementsToValidate = [];
+      this._isReady = true;
+
+      var self = this;
+      this.addEventListener('focus', function(event) {
+        if (event.currentTarget.is !== "at-core-dashboard") {
+          return;
+        }
+        if (!event.target.is) {
+          return;
+        }
+        var propertyDefinitions = self.schema.properties;
+        var propertyNames = propertyDefinitions ? Object.keys(propertyDefinitions) : [];
+        if (propertyDefinitions && propertyNames.length > 0) {
+          // focus frist element
+          var propertyName = propertyNames[0];
+          var element = self.getElement(propertyName);
+          if (element.focus) {
+            element.focus();
+          }
+        }
+      });
+    },
+    attached: function() {
+      var resizeSensor = this.$.resizeSensor;
+      var coreForm = this;
+      resizeSensor.reset();
+      var currWidth = resizeSensor.queryWidth();
+      coreForm.updateLayout(currWidth);
+      resizeSensor.addEventListener('resize-sensed', function(event) {
+        var newWidth = event.detail.value.width;
+        // console.log('at-core-dashboard new width: ' + newWidth + 'px');
+        coreForm.updateLayout(newWidth);
+      });
+    },
+    updateLayout: function(newWidth, oldWidth) {
+      // 377 is from fibonacci sequence; it should do just fine
+      if (newWidth < 600) {
+        this.layout = "vertical";
+      } else {
+        this.layout = "horizontal";
+      }
+    },
+    hideChanged: function(newValue, oldValue) {
+      var self = this;
+      var insertPoint = this.$.insertPoint;
+
+      if (this.schema && this.schema.properties) {
+        var properties = this.schema.properties;
+        var propNames = Object.keys(properties);
+        propNames.forEach(function(propName, index) {
+          var formElement = Polymer.dom(insertPoint).querySelector('#' + propName);
+          if (formElement) {
+            Polymer.dom(formElement.parentElement).classList.remove('hidden');
+            formElement.hide = newValue;
+          }
+        });
+      }
+    },
+    // ------------------------------
+    // *ij* maybe one day when we have HTML7 and resize event for elements this function will not be necessary
+    // this function is here to solve the problem in at-form-designer
+    // when user switches to field settings tab, resize sensor is incorrectly initialized
+    // so this function needs to be called to reinitialize the sensor
+    resetResizeSensor: function() {
+      var resizeSensor = this.$.resizeSensor;
+      var coreForm = this;
+      resizeSensor.reset();
+      var currWidth = resizeSensor.queryWidth();
+      coreForm.updateLayout(currWidth);
+    },
+    // ------------------------------
+    schemaChanged: function(newValue, oldValue) {
+      if (this._isReady) {
+        var self = this;
+        var schemaHelpers = window.schemaHelpers;
+        if (schemaHelpers.isString(newValue)) {
+          try {
+            newValue = JSON.parse(newValue);
+            this.schema = newValue;
+            return;
+          } catch (e) {
+            console.log(e);
+          }
+        }
+
+        if (schemaHelpers.isString(self.data)) {
+          try {
+            var dataObj = JSON.parse(self.data);
+            self.data = dataObj;
+          } catch (e) {
+            console.log(e);
+          }
+        }
+
+        self.elementsToValidate = [];
+
+        var fieldsContainer = this.$.insertPoint;
+        // clear the previous html content in the container
+        Polymer.dom(fieldsContainer).innerHTML = '';
+
+        var propertyDefinitions = newValue.properties;
+        var propertyNames = [];
+        var propertyDefinition;
+        var defaultValue;
+        var value;
+        var xgridcols;
+        var gridColsCssName;
+        var fieldContainer;
+        var formElement;
+        var displayType;
+
+        if (propertyDefinitions) {
+          propertyNames = Object.keys(propertyDefinitions);
+          propertyNames.forEach(function(propertyName) {
+            if (schemaHelpers.isPropertyNameValid(propertyName)) {
+              propertyDefinition = propertyDefinitions[propertyName];
+
+              // handle default value
+              defaultValue = propertyDefinition.default;
+              value = self.data[propertyName];
+              // if default value is not null or undefined and regular value is null or undefined
+              if (schemaHelpers.notNullOrEmpty(defaultValue) && schemaHelpers.isNullOrEmpty(value)) {
+                // make the default value regular value
+                self.data[propertyName] = defaultValue;
+              }
+
+              displayType = schemaHelpers.getDisplayType(propertyDefinition, self._unsupported_types);
+
+              // handle xgridcols
+              xgridcols = displayType === "section" ? 12 : 6;
+              if (schemaHelpers.notNullOrEmpty(propertyDefinition.xgridcols)) {
+                xgridcols = parseInt(propertyDefinition.xgridcols);
+              }
+
+              // create element for field
+              formElement = schemaHelpers.createElement(propertyName, displayType, propertyDefinition);
+
+              // create the field container
+              fieldContainer = document.createElement('div');
+              gridColsCssName = "col-" + xgridcols;
+              Polymer.dom(fieldContainer).classList.add(gridColsCssName);
+
+              // special container for at-form-toggle to allow smaller height in vertical mode
+              if (formElement.tagName.toLowerCase() == "at-form-checkbox") {
+                Polymer.dom(fieldContainer).classList.add("at-form-checkbox");
+              }
+
+              if (schemaHelpers.isNullOrEmpty(self.data[propertyName])) {
+                // at-core-dashboard.data doesn't contain an entry for the current property
+                // add initial value of the formElement to the at-core-dashboard.data
+                self.data[propertyName] = formElement.value;
+              } else {
+                // else set initial value from at-core-dashboard.data to fromElement
+                formElement.value = self.data[propertyName];
+              }
+              if (formElement.clearUIValidState !== undefined) {
+                // at-form-section doesn't have clearUIValidState function nor does it need one
+                formElement.clearUIValidState();
+              }
+
+              formElement.addEventListener('value-changed', function(event) {
+                // event.stopPropagation();
+                if (!self._isBatchUpdate) {
+                  if (event.target.files) {
+                    self._updateFilesObject(event.target.id, event.target.files);
+                  }
+
+                  self._updateDataObject(event.target.id, event.detail.value);
+                }
+              });
+
+              Polymer.dom(formElement).setAttribute('id', propertyName);
+              self.elementsToValidate.push(formElement);
+
+              // if at-core-dashboard is hidden, element should be hidden as well
+              if (self.hide) {
+                formElement.hide = true;
+              }
+
+              // append paper element to its container
+              Polymer.dom(fieldContainer).appendChild(formElement);
+
+              if (formElement.hide) {
+                Polymer.dom(fieldContainer).classList.add('hidden');
+              }
+
+              // add container to as child to insertPoint
+              Polymer.dom(fieldsContainer).appendChild(fieldContainer);
+
+              // udpate the disabled status
+              self.disabledChanged(self.disabled, self.disabled);
+            } else {
+              console.log('Property name is invalid. Skipping ' + propertyName + ' property');
+              console.log('Property definition is:  ', schemaHelpers.formatJson(propertyDefinition));
+            }
+          });
+          self.fire('at-core-dashboard-rendered');
+        } else {
+          //TODO Implement clear of data property
+        }
+
+        // add div class="clearfix"
+        var clearfixDiv = document.createElement('div');
+        Polymer.dom(clearfixDiv).classList.add('clearfix');
+        Polymer.dom(fieldsContainer).appendChild(clearfixDiv);
+
+        // if any element is required in schema its valid state is updated after creation
+        // at-core-dashboard needs to reflect that state
+        if (self.elementsToValidate.length > 0) {
+          self._calculateFormValidState();
+        }
+      }
+
+      var resizeSensor = this.$.resizeSensor;
+      resizeSensor.reset();
+      var width = resizeSensor.queryWidth();
+      this.updateLayout(width);
+    },
+    /* *ij*
+     OK. Imperative data binding doesn't work in polymer anymore.
+     It may happen in the future but not in near future.
+     Using at-core-dashboard.data[field] = 'newValue' doesn't work. Its not possible to bind to at-core-dashboard.data[field] to update field value automatically
+     Explained in https://github.com/Polymer/polymer/issues/1778 and https://github.com/Polymer/polymer/issues/1796
+
+     So, to solve this shortcoming a updateFormElementData function is introduced
+     The purpose of this function is, obviously, to update a value of the specific field.
+     This function will update the .data object and .value of the field with provided elementId.
+     If the field with provided elementId doesn't exist a debug message will be loged in the console
+
+     Alternative to this approach is to create a completely new object each time you want to update the .data property
+     IMO, this approach is a waste of time. An updateFormElementData function is much more efficient
+
+     Another alternative to this approach is to have a function that will return the element itself. Than the client can do whatever he likes with the element
+     not just update value. This approach seems reasonable for setFieldState action in at-form-rule-edit
+     */
+    updateFormElementData: function(elementId, value) {
+      var fieldsContainer = this.$.insertPoint,
+        fieldElement = Polymer.dom(fieldsContainer).querySelector('#' + elementId);
+
+      this.data[elementId] = value;
+      if (schemaHelpers.valueNotReadOnly(fieldElement)) {
+        fieldElement.value = value;
+        // *ij* polymer js doesn't call valueChanged if value is of type array or object
+        // we check for this situation and call valueChanged by hand
+        if (schemaHelpers.isObject(fieldElement.value) || schemaHelpers.isArray(fieldElement.value)) {
+          fieldElement.valueChanged(value, undefined);
+        }
+      } else {
+        // if not log the debug message
+        console.debug('Field with id: ' + elementId + ' doesn\'t exist in form.');
+      }
+    },
+
+    setElementState: function(elementId, state, value) {
+      var element = Polymer.dom(this.$.insertPoint).querySelector('#' + elementId);
+      if (element) {
+        element[state] = value;
+      } else {
+        // if not log the debug message
+        console.debug('Field with id: ' + elementId + ' doesn\'t exist in form.');
+      }
+    },
+
+    getElement: function(elementId) {
+      var insertPoint = this.$.insertPoint;
+      var selector = '#' + elementId;
+      var element = Polymer.dom(insertPoint).querySelector(selector);
+
+      return element;
+    },
+
+    dataChanged: function(newValue, oldValue) {
+      var fieldsContainer = Polymer.dom(this.$.insertPoint);
+      var fieldElement;
+      var properties = this.schema.properties;
+      var initialData = this._calculateInitialDataFromSchemaProperties(properties);
+
+      if (schemaHelpers.isString(newValue)) {
+        try {
+          newValue = JSON.parse(newValue);
+          this.data = newValue;
+          return;
+        } catch (e) {
+          console.log(e);
+        }
+      }
+
+      this._isBatchUpdate = true;
+
+      if (schemaHelpers.isObject(oldValue)) {
+        Object.keys(initialData).forEach(function(propertyName) {
+          if (!newValue.hasOwnProperty(propertyName)) {
+            newValue[propertyName] = initialData[propertyName];
+          }
+        });
+      }
+
+      if (schemaHelpers.isObject(newValue)) {
+        Object.keys(newValue).forEach(function(propertyName) {
+          fieldElement = fieldsContainer.querySelector('#' + propertyName);
+          if (schemaHelpers.valueNotReadOnly(fieldElement)) {
+            fieldElement.value = newValue[propertyName];
+          }
+        });
+      } else {
+        console.log('at-core-dashboard expects objects as new value, but got ' + schemaHelpers.formatJson(newValue) + ' instead');
+      }
+
+      this._isBatchUpdate = false;
+      this._calculateFormValidState();
+      this.fire('data-changed', {
+        value: this.data
+      });
+    },
+
+    /*
+     * This function is called on value-changed event for each element on the form
+     * property is property name
+     * value is the new value to be set
+     */
+    _updateDataObject: function(property, value) {
+      this.data[property] = value;
+      this._calculateFormValidState();
+
+      var elementsToUpdate = [];
+      var properties = this.schema.properties;
+      var propertyNames = Object.keys(properties);
+
+      for (var i = 0; i < propertyNames.length; i++) {
+        var propName = propertyNames[i];
+        if (propName !=  property) {
+          var propDef = properties[propName];
+          if (isArray(propDef.dashboardListeners)) {
+            for (var j = 0; j < propDef.dashboardListeners.length; j++) {
+              var listener = propDef.dashboardListeners[j];
+              if (listener.value === property) {
+                var element = this.getElement(propName);
+                elementsToUpdate.push(element);
+              }
+            }
+          }
+        }
+      }
+      if (elementsToUpdate.length > 0) {
+        var eventData = {
+          eventname: property,
+          data: this.data
+        };
+
+        for (var k = 0; k < elementsToUpdate.length; k++) {
+          var element = elementsToUpdate[k];
+          if (isFunction(element.listen)) {
+            element.listen(eventData);
+          }
+        }
+      }
+
+      this.fire('data-changed', {
+        property: property,
+        value: this.data
+      });
+    },
+
+    filesChanged: function(newValue, oldValue) {
+      //var fieldsContainer = Polymer.dom(this.$.insertPoint);
+      //var fieldElement;
+      //var properties = this.schema.properties;
+      //var initialData = this._calculateInitialDataFromSchemaProperties(properties);
+
+      //if (schemaHelpers.isString(newValue)) {
+      //    try {
+      //        newValue = JSON.parse(newValue);
+      //        this.data = newValue;
+      //        return;
+      //    } catch (e) {
+      //        console.log(e);
+      //    }
+      //}
+
+      //this._isBatchUpdate = true;
+
+      //if (schemaHelpers.isObject(oldValue)) {
+      //    Object.keys(initialData).forEach(function(propertyName) {
+      //        if (!newValue.hasOwnProperty(propertyName)) {
+      //            newValue[propertyName] = initialData[propertyName];
+      //        }
+      //    });
+      //}
+
+      //if (schemaHelpers.isObject(newdeValue)) {
+      //    Object.keys(newValue).forEach(function(propertyName) {
+      //        fieldElement = fieldsContainer.querySelector('#' + propertyName);
+      //        if (schemaHelpers.valueNotReadOnly(fieldElement)) {
+      //            fieldElement.value = newValue[propertyName];
+      //        }
+      //    });
+      //} else {
+      //    console.log('at-core-dashboard expects objects as new value, but got ' + schemaHelpers.formatJson(newValue) + ' instead');
+      //}
+
+      //this._isBatchUpdate = false;
+      //this._calculateFormValidState();
+      //this.fire('data-changed', {
+      //    value: this.data
+      //});
+    },
+
+    /*
+     * This function is called on value-changed event for each element on the form
+     * property is property name
+     * value is the new value to be set
+     */
+    _updateFilesObject: function(property, value) {
+      this.files[property] = value;
+      this._calculateFormValidState();
+      this.fire('files-changed', {
+        property: property,
+        value: this.files
+      });
+    },
+
+    _calculateFormValidState: function() {
+      var isValid = true;
+
+      this.elementsToValidate.forEach(function(element) {
+        var elementValid = element.valid;
+        isValid = isValid && elementValid;
+      });
+
+      this._setValid(isValid);
+
+      return isValid;
+    },
+
+    /*
+     * Validates the form
+     * It calls validate method of each element in elementsToValidate array
+     * Form is valid if all elements are valid. Form is invalid if at least one element is invalid.
+     */
+    validate: function() {
+      var isValid = true;
+
+      this.elementsToValidate.forEach(function(element) {
+        var elementValid = element.validate();
+        isValid = isValid && elementValid;
+      });
+
+      this._setValid(isValid);
+
+      return isValid;
+    },
+
+    disabledChanged: function(newValue, oldValue) {
+      var fieldsContainer = this.$.insertPoint;
+      var fieldElement;
+      var properties = this.schema.properties;
+
+      Object.keys(properties).forEach(function(propertyName) {
+        fieldElement = Polymer.dom(fieldsContainer).querySelector('#' + propertyName);
+        if (fieldElement) {
+          if (newValue) {
+            fieldElement.disabled = newValue;
+          } else {
+            fieldElement.disabled = Boolean(properties[propertyName].disabled);
+          }
+        }
+      });
+    },
+    layoutChanged: function(newValue, oldValue) {
+      this.toggleClass('vertical', newValue === 'vertical', this.$.insertPoint);
+    },
+    _convertPropertiesToSchemaValues: function(properties) {
+      var result = {
+          schema: {
+            properties: {}
+          },
+          values: {}
+        },
+        property,
+        propDef,
+        innerProp,
+        propObj;
+
+      for (property in properties) {
+        propObj = result.properties[property] = {};
+        propDef = properties[property];
+        for (innerProp in propDef) {
+          if (innerProp === 'value') {
+            result.values[property] = propDef[innerProp];
+          } else {
+            propObj[innerProp] = propDef[innerProp];
+          }
+        }
+      }
+
+      return result;
+    },
+    /**
+     * This function is created for task #773 at-core-dashboard .data handling
+     * this function creates initial data object from schema properties
+     * value for each entry is either default value from element or default value from schema (specified with default: '<value>')
+     * dataChanged function calls this function
+     */
+    _calculateInitialDataFromSchemaProperties: function(properties) {
+      var insertPoint = this.$.insertPoint;
+      var result = {};
+      var propertyNames = Object.keys(properties);
+      var propSchemaDef;
+      var calculatedValue;
+
+      propertyNames.forEach(function(propName, index) {
+        propSchemaDef = properties[propName];
+
+        // if .default exists in propSchemaDef that is the calculatedValue
+        if (propSchemaDef.default !== undefined) {
+          calculatedValue = propSchemaDef.default;
+        } else {
+          // form is already created; query the self.$.insertPoint and get default value from element.properties.value.value
+          var element = Polymer.dom(insertPoint).querySelector('#' + propName);
+          if (element.properties.value !== undefined && element.properties.value.value !== undefined) {
+            // at-form-section doesn't have value property nor does it need one
+            calculatedValue = element.properties.value.value;
+          }
+        }
+
+        result[propName] = calculatedValue;
+      });
+
+      return result;
+    }
+
+  });
+
+  function isArray(obj) {
+    return Object.prototype.toString.call(obj) === "[object Array]";
+  }
+
+  function isFunction(obj) {
+    return Object.prototype.toString.apply(obj) === "[object Function]";
+  }
+</script>

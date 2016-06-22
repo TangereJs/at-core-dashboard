@@ -1,0 +1,69 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../at-theme/at-theme.html">
+
+<dom-module id="at-core-dashboard-echo">
+  <template>
+    <style include="at-form-common"></style>
+    <style>
+    </style>
+    <div class="at-container">
+      <div id="insertPoint" class="at-content">
+
+      </div>
+    </div>
+  </template>
+  <script>
+    'use strict';
+    Polymer({
+      is: 'at-core-dashboard-echo',
+      properties: {
+        template: {
+          type: String,
+          value: ""
+        }
+      },
+      $meta: [{
+        title: "Dashboard echo",
+        type: "element",
+        xtype: "at-core-dashboard-echo"
+      }],
+      ready: function () {
+
+      },
+      listen:function (event) {
+        function isArray(obj) {
+          return Object.prototype.toString.call(obj) === "[object Array]";
+        }
+        var template = this.template;
+        var templates = [];
+
+        if (template.indexOf(',') === -1) {
+          templates.push(template);
+        } else {
+          var templateParts = template.split(',');
+          for (var i = 0; i < templateParts.length; i++) {
+            var templatePart = templateParts[i];
+            templatePart = templatePart.trim();
+            templates.push(templatePart);
+          }
+        }
+
+        var insertPoint = this.$.insertPoint;
+        Polymer.dom(insertPoint).innerHTML = "";
+        var divPrototype = document.createElement('div');
+        var docFragment = document.createDocumentFragment();
+
+        for (var j = 0; j < templates.length; j++) {
+          template = templates[j];
+          var fieldName = template.substring((template.indexOf("{{")+2), template.indexOf("}}"));
+          template = template.replace("{{"+fieldName+"}}", event.data[fieldName]);
+          var div = divPrototype.cloneNode(true);
+          div.textContent = template;
+          Polymer.dom(docFragment).appendChild(div);
+        }
+
+        Polymer.dom(insertPoint).appendChild(docFragment);
+      }
+    });
+  </script>
+</dom-module>
