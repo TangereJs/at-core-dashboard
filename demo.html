@@ -1,11 +1,87 @@
-﻿<!DOCTYPE html>
+
+<!DOCTYPE html>
 <html>
+
 <head>
-    <title></title>
-    <script src="../webcomponentsjs/webcomponents-lite.js" charset="utf-8"></script>
-    <link rel="import" href="at-core-dashboard.html">
+  <title></title>
+  <script src="../webcomponentsjs/webcomponents-lite.js" charset="utf-8"></script>
+  <link rel="import" href="../at-form-text/at-form-text.html">
+  <link rel="import" href="at-core-dashboard-echo.html">
+  <link rel="import" href="at-core-dashboard.html">
+
 </head>
+
 <body>
-  <at-core-dashboard></at-core-dashboard>
+  <at-core-dashboard id="dashboard"></at-core-dashboard>
+
+  <script>
+    document.addEventListener('WebComponentsReady', function(event) {
+      window.schemaHelpers.initializeCentralArrayOfComponents();
+      var dashboard = document.getElementById('dashboard');
+
+      dashboard.schema = {
+        "properties": {
+          "input1": {
+            "type": "string",
+            "hideLabel": false,
+            "required": false,
+            "disabled": false,
+            "placeholder": "",
+            "maxChars": 0,
+            "hide": false,
+            "valid": true,
+            "errorMessage": "",
+            "hint": "",
+            "title": "Text 1",
+            "default": "",
+            "dashboardListeners": []
+          },
+          "input2": {
+            "type": "string",
+            "hideLabel": false,
+            "required": false,
+            "disabled": false,
+            "placeholder": "",
+            "maxChars": 0,
+            "hide": false,
+            "valid": true,
+            "errorMessage": "",
+            "hint": "",
+            "title": "Text 2",
+            "default": "",
+            "dashboardListeners": []
+          },
+          "at-core-dashboard-echo4": {
+            "type": "element",
+            "xtype": "at-core-dashboard-echo",
+            "template": "field1={{input1}}",
+            "dashboardListeners": [{
+              "value": "input1"
+            }]
+          },
+          "at-core-dashboard-echo5": {
+            "type": "element",
+            "xtype": "at-core-dashboard-echo",
+            "template": "field2={{input2}}",
+            "dashboardListeners": [{
+              "value": "input2"
+            }]
+          },
+          "at-core-dashboard-echo6": {
+            "type": "element",
+            "xtype": "at-core-dashboard-echo",
+            "template": "field1={{input1}}, field2={{input2}}",
+            "dashboardListeners": [{
+              "value": "input1"
+            }, {
+              "value": "input2"
+            }]
+          }
+        }
+      };
+
+    });
+  </script>
 </body>
+
 </html>
