@@ -358,6 +358,8 @@
       resizeSensor.reset();
       var width = resizeSensor.queryWidth();
       this.updateLayout(width);
+
+      this._updateElementsThatHaveActionListeners();
     },
     /* *ij*
      OK. Imperative data binding doesn't work in polymer anymore.
@@ -453,11 +455,52 @@
         console.log('at-core-dashboard expects objects as new value, but got ' + schemaHelpers.formatJson(newValue) + ' instead');
       }
 
+      this._updateElementsThatHaveActionListeners();
+
       this._isBatchUpdate = false;
       this._calculateFormValidState();
       this.fire('data-changed', {
         value: this.data
       });
+    },
+
+    _updateElementsThatHaveActionListeners: function() {
+      var self = this;
+
+      function isObject(obj) {
+        return Object.prototype.toString.call(obj) === "[object Object]";
+      }
+
+      function isString(obj) {
+        return Object.prototype.toString.call(obj) === "[object String]";
+      }
+
+      var elementsToUpdate = [];
+      var properties = self.schema.properties;
+      var propertyNames = Object.keys(properties);
+
+      for (var i = 0; i < propertyNames.length; i++) {
+        var propName = propertyNames[i];
+        var propDef = properties[propName];
+        var eventData = {
+          eventName: "",
+          data: self.data
+        };
+
+        if (isArray(propDef.actionListeners)) {
+          for (var j = 0; j < propDef.actionListeners.length; j++) {
+            var listener = propDef.actionListeners[j];
+            var element = self.getElement(propName);
+            if (isObject(listener)) {
+              eventData.eventName = listener.value;
+              element.actionListener(eventData);
+            } else if (isString(listener)) {
+              eventData.eventName = listener;
+              element.actionListener(eventData);
+            }
+          }
+        }
+      }
     },
 
     /*

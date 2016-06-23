@@ -1,5 +1,6 @@
 <!doctype html>
 <html>
+
 <head>
 
   <title>at-core-dashboard tests</title>
@@ -17,6 +18,7 @@
   <link rel="import" href="../at-core-dashboard.html">
 
 </head>
+
 <body>
 
   <test-fixture id="schemaTests">
@@ -26,14 +28,148 @@
   </test-fixture>
 
   <script>
-    suite('at-core-dashboard schema tests', function () {
+    suite('at-core-dashboard schema tests', function() {
 
-      test('test1', function () {
+      var schema = {
+        properties: {
+          text1: {
+            type: 'string',
+            title: "Text 1"
+          },
+          date2: {
+            type: 'string',
+            xype: 'date',
+            title: "Date 2",
+            format: "DD-MM-YYYY"
+          },
+          daterange3: {
+            type: 'daterange',
+            title: "Daterange 3",
+            format: "DD-MM-YYYY",
+            startDate: "01-05-2016",
+            endDate: "31-05-2016"
+          },
+          chartCore4: {
+            type: 'element',
+            xtype: 'at-chart-core',
+            title: "Chart core 4"
+          },
+          chartStrudel5: {
+            type: 'element',
+            xtype: "at-chart-strudel",
+            title: "Chart strudel 5"
+          },
+          dashboardEcho6: {
+            type: 'element',
+            xtype: "at-core-dashboard-echo",
+            title: "Dashboard echo 6"
+          }
+        }
+      };
+
+      var data = {
+        text1: "lorem ipsum",
+        date2: "12-05-2016"
+      }
+
+      test('are elements from schema present on dashboard', function() {
         var dashboard = fixture('schemaTests');
-        
+        dashboard.schema = schema;
+
+        var elementNames = ["text1", "date2", "daterange3", "chartCore4", "chartStrudel5", "dashboardEcho6"];
+
+        elementNames.forEach(function(name, index) {
+          var element = dashboard.getElement(name);
+          assert.isNotNull(element, "element " + name + " not present on dashboard");
+        });
+      });
+
+      test('is initial data set correctly', function() {
+        var dashboard = fixture('schemaTests');
+        dashboard.schema = schema;
+        dashboard.data = data;
+
+        var element = dashboard.getElement("text1");
+        assert.equal(element.value, "lorem ipsum", "text1 value not set correctly");
+
+        element = dashboard.getElement("date2");
+        assert.equal(element.value, "12-05-2016", "date2 value not set correctly");
+
+        element = dashboard.getElement("daterange3");
+        element.startDate = "01-05-2016";
+        element.endDate = "31-05-2016";
+        assert.equal(element.value, element.T("{0} to {1}", "01-05-2016", "31-05-2016"), "daterange3 value not set correctly");
+      });
+
+      var schemaAL = {
+        properties: {
+          text1: {
+            type: 'string',
+            title: "Text 1"
+          },
+          text2: {
+            type: 'string',
+            title: "Text 2"
+          },
+          dashboardEcho1: {
+            type: 'element',
+            xtype: "at-core-dashboard-echo",
+            title: "Dashboard echo 1",
+            template: "field1={{text1}}",
+            actionListeners: [{
+              value: "text1"
+            }]
+          },
+          dashboardEcho2: {
+            type: 'element',
+            xtype: "at-core-dashboard-echo",
+            title: "Dashboard echo 2",
+            template: "field2={{text2}}",
+            actionListeners: ["text2"]
+          },
+          dashboardEcho3: {
+            type: 'element',
+            xtype: "at-core-dashboard-echo",
+            title: "Dashboard echo 3",
+            template: "field1={{text1}}, field2={{text2}}",
+            actionListeners: ["text1", "text2"]
+          }
+        }
+      };
+
+      var dataAL = {
+        text1: "lorem ipsum 1",
+        text2: "lorem ipsum 2"
+      };
+
+      test('do action listeners work correctly', function() {
+        var dashboard = fixture('schemaTests');
+        dashboard.schema = schemaAL;
+        dashboard.data = dataAL;
+
+        var element = dashboard.getElement("text1");
+        assert.equal(element.value, "lorem ipsum 1", "text1 value not set correctly");
+
+        element = dashboard.getElement("text2");
+        assert.equal(element.value, "lorem ipsum 2", "text2 value not set correctly");
+
+        var echo1 = dashboard.getElement('dashboardEcho1');
+        var div = Polymer.dom(echo1.$.insertPoint).children[0];
+        assert.equal(div.textContent, "field1=lorem ipsum 1");
+
+        var echo2 = dashboard.getElement('dashboardEcho2');
+        div = Polymer.dom(echo2.$.insertPoint).children[0];
+        assert.equal(div.textContent, "field2=lorem ipsum 2");
+
+        var echo3 = dashboard.getElement('dashboardEcho3');
+        div = Polymer.dom(echo3.$.insertPoint).children[0];
+        assert.equal(div.textContent, "field1=lorem ipsum 1");
+        div = Polymer.dom(echo3.$.insertPoint).children[1];
+        assert.equal(div.textContent, "field2=lorem ipsum 2");
       });
     });
   </script>
 
 </body>
+
 </html>
