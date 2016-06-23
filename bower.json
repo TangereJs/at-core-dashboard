@@ -1,8 +1,15 @@
 {
   "name": "at-core-dashboard",
-  "version": "0.0.1.62",
+  "version": "0.0.1.63",
   "private": true,
   "dependencies": {
-    "polymer": "Polymer/polymer#master"
+    "polymer": "Polymer/polymer#master",
+    "at-form-text": "tangerejs/at-form-text#0.8-preview",
+    "at-form-date": "tangerejs/at-form-date#0.8-preview",
+    "at-form-daterange": "tangerejs/at-form-daterange#0.8-preview",
+    "at-chart-core": "tangerejs/at-chart-core#0.8-preview",
+    "at-chart-strudel": "tangerejs/at-chart-strudel#0.8-preview",
+    "at-core-resize-sensor": "tangerejs/at-core-resize-sensor#0.8-preview",
+    "at-theme": "at-theme#0.8-preview"
   }
 }

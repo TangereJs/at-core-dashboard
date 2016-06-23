@@ -1,7 +1,7 @@
 <link rel="import" href="../polymer/polymer.html">
-<link rel="import" href="schema-helpers-import.html">
 <link rel="import" href="../at-core-resize-sensor/at-core-resize-sensor.html">
 <link rel="import" href="../at-theme/at-theme.html">
+<link rel="import" href="schema-helpers-import.html">
 
 <dom-module id="at-core-dashboard">
   <template>
@@ -94,23 +94,33 @@
         },
         observer: 'dataChanged'
       },
-      files: {
-        type: Object,
-        value: function() {
-          return {};
-        },
-        observer: 'filesChanged'
+      /**
+       * When true hides all elements.
+       * @property hide
+       * @type Boolean
+       * @default false
+       */
+      hide: {
+        type: Boolean,
+        value: false,
+        observer: 'hideChanged'
+      },
+      /**
+       * When true disables all elements.
+       * @property disabled
+       * @type Boolean
+       * @default false
+       */
+      disabled: {
+        type: Boolean,
+        value: false,
+        observer: 'disabledChanged'
       },
       valid: {
         type: Boolean,
         notify: true,
         value: true,
         readOnly: true
-      },
-      disabled: {
-        type: Boolean,
-        value: false,
-        observer: 'disabledChanged'
       },
       /**
        * at-core-dashboard can now have a one column or two column layout <br/>
@@ -129,28 +139,10 @@
         observer: 'layoutChanged',
         xtype: "enum",
         xvaluelist: "horizontal,vertical"
-      },
-      /**
-       * When true hides all elements.
-       * @property hide
-       * @type Boolean
-       * @default false
-       */
-      hide: {
-        type: Boolean,
-        value: false,
-        observer: 'hideChanged'
       }
+
     },
     set valid(newValue) {},
-    _isReady: false,
-    /**
-     * This flag is used to prevent value-changed event listener on form elements
-     * from updating data property when element's value is supplied from data property
-     */
-    _isBatchUpdate: false,
-    _unsupported_types: [],
-    elementsToValidate: [],
     ready: function() {
       this.elementsToValidate = [];
       this._isReady = true;
@@ -279,7 +271,7 @@
                 self.data[propertyName] = defaultValue;
               }
 
-              displayType = schemaHelpers.getDisplayType(propertyDefinition, self._unsupported_types);
+              displayType = schemaHelpers.getDisplayType(propertyDefinition, []);
 
               // handle xgridcols
               xgridcols = displayType === "section" ? 12 : 6;
@@ -316,10 +308,6 @@
               formElement.addEventListener('value-changed', function(event) {
                 // event.stopPropagation();
                 if (!self._isBatchUpdate) {
-                  if (event.target.files) {
-                    self._updateFilesObject(event.target.id, event.target.files);
-                  }
-
                   self._updateDataObject(event.target.id, event.detail.value);
                 }
               });
@@ -425,6 +413,10 @@
     },
 
     dataChanged: function(newValue, oldValue) {
+      if (!this._isReady) {
+        return;
+      }
+
       var fieldsContainer = Polymer.dom(this.$.insertPoint);
       var fieldElement;
       var properties = this.schema.properties;
@@ -477,6 +469,7 @@
       function isObject(obj) {
         return Object.prototype.toString.call(obj) === "[object Object]";
       }
+
       function isString(obj) {
         return Object.prototype.toString.call(obj) === "[object String]";
       }
@@ -490,7 +483,7 @@
 
       for (var i = 0; i < propertyNames.length; i++) {
         var propName = propertyNames[i];
-        if (propName !=  property) {
+        if (propName != property) {
           var propDef = properties[propName];
           if (isArray(propDef.actionListeners)) {
             for (var j = 0; j < propDef.actionListeners.length; j++) {
@@ -528,64 +521,6 @@
       this.fire('data-changed', {
         property: property,
         value: this.data
-      });
-    },
-
-    filesChanged: function(newValue, oldValue) {
-      //var fieldsContainer = Polymer.dom(this.$.insertPoint);
-      //var fieldElement;
-      //var properties = this.schema.properties;
-      //var initialData = this._calculateInitialDataFromSchemaProperties(properties);
-
-      //if (schemaHelpers.isString(newValue)) {
-      //    try {
-      //        newValue = JSON.parse(newValue);
-      //        this.data = newValue;
-      //        return;
-      //    } catch (e) {
-      //        console.log(e);
-      //    }
-      //}
-
-      //this._isBatchUpdate = true;
-
-      //if (schemaHelpers.isObject(oldValue)) {
-      //    Object.keys(initialData).forEach(function(propertyName) {
-      //        if (!newValue.hasOwnProperty(propertyName)) {
-      //            newValue[propertyName] = initialData[propertyName];
-      //        }
-      //    });
-      //}
-
-      //if (schemaHelpers.isObject(newdeValue)) {
-      //    Object.keys(newValue).forEach(function(propertyName) {
-      //        fieldElement = fieldsContainer.querySelector('#' + propertyName);
-      //        if (schemaHelpers.valueNotReadOnly(fieldElement)) {
-      //            fieldElement.value = newValue[propertyName];
-      //        }
-      //    });
-      //} else {
-      //    console.log('at-core-dashboard expects objects as new value, but got ' + schemaHelpers.formatJson(newValue) + ' instead');
-      //}
-
-      //this._isBatchUpdate = false;
-      //this._calculateFormValidState();
-      //this.fire('data-changed', {
-      //    value: this.data
-      //});
-    },
-
-    /*
-     * This function is called on value-changed event for each element on the form
-     * property is property name
-     * value is the new value to be set
-     */
-    _updateFilesObject: function(property, value) {
-      this.files[property] = value;
-      this._calculateFormValidState();
-      this.fire('files-changed', {
-        property: property,
-        value: this.files
       });
     },
 
