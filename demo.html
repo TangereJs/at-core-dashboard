@@ -34,7 +34,7 @@
             "hint": "",
             "title": "Text 1",
             "default": "",
-            "dashboardListeners": []
+            "actionListeners": []
           },
           "input2": {
             "type": "string",
@@ -49,13 +49,13 @@
             "hint": "",
             "title": "Text 2",
             "default": "",
-            "dashboardListeners": []
+            "actionListeners": []
           },
           "at-core-dashboard-echo4": {
             "type": "element",
             "xtype": "at-core-dashboard-echo",
             "template": "field1={{input1}}",
-            "dashboardListeners": [{
+            "actionListeners": [{
               "value": "input1"
             }]
           },
@@ -63,15 +63,13 @@
             "type": "element",
             "xtype": "at-core-dashboard-echo",
             "template": "field2={{input2}}",
-            "dashboardListeners": [{
-              "value": "input2"
-            }]
+            "actionListeners": ["input2"]
           },
           "at-core-dashboard-echo6": {
             "type": "element",
             "xtype": "at-core-dashboard-echo",
             "template": "field1={{input1}}, field2={{input2}}",
-            "dashboardListeners": [{
+            "actionListeners": [{
               "value": "input1"
             }, {
               "value": "input2"

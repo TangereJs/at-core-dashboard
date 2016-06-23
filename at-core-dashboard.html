@@ -474,6 +474,13 @@
      * value is the new value to be set
      */
     _updateDataObject: function(property, value) {
+      function isObject(obj) {
+        return Object.prototype.toString.call(obj) === "[object Object]";
+      }
+      function isString(obj) {
+        return Object.prototype.toString.call(obj) === "[object String]";
+      }
+
       this.data[property] = value;
       this._calculateFormValidState();
 
@@ -485,12 +492,20 @@
         var propName = propertyNames[i];
         if (propName !=  property) {
           var propDef = properties[propName];
-          if (isArray(propDef.dashboardListeners)) {
-            for (var j = 0; j < propDef.dashboardListeners.length; j++) {
-              var listener = propDef.dashboardListeners[j];
-              if (listener.value === property) {
-                var element = this.getElement(propName);
-                elementsToUpdate.push(element);
+          if (isArray(propDef.actionListeners)) {
+            for (var j = 0; j < propDef.actionListeners.length; j++) {
+              var listener = propDef.actionListeners[j];
+              var element;
+              if (isObject(listener)) {
+                if (listener.value === property) {
+                  element = this.getElement(propName);
+                  elementsToUpdate.push(element);
+                }
+              } else if (isString(listener)) {
+                if (listener === property) {
+                  element = this.getElement(propName);
+                  elementsToUpdate.push(element);
+                }
               }
             }
           }
@@ -504,8 +519,8 @@
 
         for (var k = 0; k < elementsToUpdate.length; k++) {
           var element = elementsToUpdate[k];
-          if (isFunction(element.listen)) {
-            element.listen(eventData);
+          if (isFunction(element.actionListener)) {
+            element.actionListener(eventData);
           }
         }
       }
