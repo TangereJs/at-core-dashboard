@@ -1,6 +1,6 @@
 {
   "name": "at-core-dashboard",
-  "version": "0.0.1.65",
+  "version": "0.0.1.66",
   "private": true,
   "dependencies": {
     "polymer": "Polymer/polymer#master",
@@ -11,6 +11,7 @@
     "at-chart-strudel": "tangerejs/at-chart-strudel#0.8-preview",
     "at-core-resize-sensor": "tangerejs/at-core-resize-sensor#0.8-preview",
     "at-theme": "tangerejs/at-theme#0.8-preview",
-    "at-core-schema": "tangerejs/at-core-schema#0.8-preview"
+    "at-core-schema": "tangerejs/at-core-schema#0.8-preview",
+    "at-carbon-moment": "tangerejs/at-carbon-moment#0.8-preview"
   }
 }

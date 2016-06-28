@@ -1,5 +1,6 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../at-theme/at-theme.html">
+<link rel="import" href="../at-carbon-moment/momentjs-import.html">
 
 <dom-module id="at-core-dashboard-echo">
   <template>
@@ -34,8 +35,21 @@
         function isArray(obj) {
           return Object.prototype.toString.call(obj) === "[object Array]";
         }
+        function isEmptyString(obj) {
+          return Object.prototype.toString.call(obj) === "[object String]" && obj === "";
+        }
         var template = this.template;
         var templates = [];
+
+        if (isEmptyString(template)) {
+          Polymer.dom(this.$.insertPoint).innerHTML = "";
+          var jsonDiv = this.create('div');
+          var eventJson = JSON.stringify(event);
+          var nowStr = moment().format("HH:mm:ss");
+          jsonDiv.textContent = nowStr + " : " + eventJson;
+          Polymer.dom(this.$.insertPoint).appendChild(jsonDiv);
+          return;
+        }
 
         if (template.indexOf(',') === -1) {
           templates.push(template);
