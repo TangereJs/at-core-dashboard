@@ -44,9 +44,11 @@
         if (isEmptyString(template)) {
           Polymer.dom(this.$.insertPoint).innerHTML = "";
           var jsonDiv = this.create('div');
-          var eventJson = JSON.stringify(event);
+          var jsonPre = this.create('pre');
+          Polymer.dom(jsonDiv).appendChild(jsonPre);
+          var eventJson = JSON.stringify(event, null, " ");
           var nowStr = moment().format("HH:mm:ss");
-          jsonDiv.textContent = nowStr + " : " + eventJson;
+          jsonPre.textContent = nowStr + " : " + eventJson;
           Polymer.dom(this.$.insertPoint).appendChild(jsonDiv);
           return;
         }
