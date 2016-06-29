@@ -495,14 +495,24 @@
 
         if (isArray(propDef.actionListeners)) {
           for (var j = 0; j < propDef.actionListeners.length; j++) {
+            var listenerElement;
+            var defaultValue;
             var listener = propDef.actionListeners[j];
             var element = self.getElement(propName);
             if (isObject(listener)) {
-              eventData.eventName = listener.value;
-              element.actionListener(eventData);
+              listenerElement = self.getElement(listener.value);
+              defaultValue = self.schema.properties[listener.value].default;
+              if (listenerElement.valid && listenerElement.value !== defaultValue) {
+                eventData.eventName = listener.value;
+                element.actionListener(eventData);
+              }
             } else if (isString(listener)) {
-              eventData.eventName = listener;
-              element.actionListener(eventData);
+              listenerElement = self.getElement(listener);
+              defaultValue = self.schema.properties[listener].default;
+              if (listenerElement.valid && listenerElement.value !== defaultValue) {
+                eventData.eventName = listener;
+                element.actionListener(eventData);
+              }
             }
           }
         }
@@ -526,43 +536,46 @@
       this.data[property] = value;
       this._calculateFormValidState();
 
-      var elementsToUpdate = [];
-      var properties = this.schema.properties;
-      var propertyNames = Object.keys(properties);
+      var changedElement = this.getElement(property);
+      if (changedElement.valid === undefined || changedElement.valid) {
+        var elementsToUpdate = [];
+        var properties = this.schema.properties;
+        var propertyNames = Object.keys(properties);
 
-      for (var i = 0; i < propertyNames.length; i++) {
-        var propName = propertyNames[i];
-        if (propName != property) {
-          var propDef = properties[propName];
-          if (isArray(propDef.actionListeners)) {
-            for (var j = 0; j < propDef.actionListeners.length; j++) {
-              var listener = propDef.actionListeners[j];
-              var element;
-              if (isObject(listener)) {
-                if (listener.value === property) {
-                  element = this.getElement(propName);
-                  elementsToUpdate.push(element);
-                }
-              } else if (isString(listener)) {
-                if (listener === property) {
-                  element = this.getElement(propName);
-                  elementsToUpdate.push(element);
+        for (var i = 0; i < propertyNames.length; i++) {
+          var propName = propertyNames[i];
+          if (propName != property) {
+            var propDef = properties[propName];
+            if (isArray(propDef.actionListeners)) {
+              for (var j = 0; j < propDef.actionListeners.length; j++) {
+                var listener = propDef.actionListeners[j];
+                var element;
+                if (isObject(listener)) {
+                  if (listener.value === property) {
+                    element = this.getElement(propName);
+                    elementsToUpdate.push(element);
+                  }
+                } else if (isString(listener)) {
+                  if (listener === property) {
+                    element = this.getElement(propName);
+                    elementsToUpdate.push(element);
+                  }
                 }
               }
             }
           }
         }
-      }
-      if (elementsToUpdate.length > 0) {
-        var eventData = {
-          eventName: property,
-          data: this.data
-        };
+        if (elementsToUpdate.length > 0) {
+          var eventData = {
+            eventName: property,
+            data: this.data
+          };
 
-        for (var k = 0; k < elementsToUpdate.length; k++) {
-          var element = elementsToUpdate[k];
-          if (isFunction(element.actionListener)) {
-            element.actionListener(eventData);
+          for (var k = 0; k < elementsToUpdate.length; k++) {
+            var element = elementsToUpdate[k];
+            if (isFunction(element.actionListener)) {
+              element.actionListener(eventData);
+            }
           }
         }
       }
