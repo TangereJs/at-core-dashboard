@@ -17,21 +17,26 @@
     'use strict';
     Polymer({
       is: 'at-core-dashboard-echo',
+      
       properties: {
         template: {
           type: String,
           value: ""
         }
       },
+      
       $meta: [{
         title: "Dashboard echo",
         type: "element",
         xtype: "at-core-dashboard-echo"
       }],
+      
       ready: function () {
 
       },
+      
       actionListener:function (event) {
+        
         function isArray(obj) {
           return Object.prototype.toString.call(obj) === "[object Array]";
         }
@@ -72,7 +77,7 @@
         for (var j = 0; j < templates.length; j++) {
           template = templates[j];
           var fieldName = template.substring((template.indexOf("{{")+2), template.indexOf("}}"));
-          template = template.replace("{{"+fieldName+"}}", event.data[fieldName]);
+          template = template.replace("{{"+fieldName+"}}", event.detail.model.state[fieldName]);
           var div = divPrototype.cloneNode(true);
           div.textContent = template;
           Polymer.dom(docFragment).appendChild(div);

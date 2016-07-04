@@ -565,12 +565,20 @@
             }
           }
         }
+        
         if (elementsToUpdate.length > 0) {
+          
           var eventData = {
-            eventName: property,
-            data: this.data
+            type: property + "-changed",
+            detail: {
+              parameter: value,
+              model: {
+                state: this.data
+              }
+            }
           };
 
+          // call action on all listening elements
           for (var k = 0; k < elementsToUpdate.length; k++) {
             var element = elementsToUpdate[k];
             if (isFunction(element.actionListener)) {
