@@ -481,7 +481,6 @@
         return Object.prototype.toString.call(obj) === "[object String]";
       }
 
-      var elementsToUpdate = [];
       var properties = self.schema.properties;
       var propertyNames = Object.keys(properties);
 
@@ -489,27 +488,34 @@
         var propName = propertyNames[i];
         var propDef = properties[propName];
         var eventData = {
-          eventName: "",
-          data: self.data
+          type: propName + "-changed",
+          detail: {
+            parameter: this.data[propName],
+            model: {
+              state: this.data
+            }
+          }
         };
 
         if (isArray(propDef.actionListeners)) {
           for (var j = 0; j < propDef.actionListeners.length; j++) {
             var listenerElement;
-            var defaultValue;
+            var defaultValue, valueFromThisProperties;
             var listener = propDef.actionListeners[j];
             var element = self.getElement(propName);
             if (isObject(listener)) {
               listenerElement = self.getElement(listener.value);
               defaultValue = self.schema.properties[listener.value].default;
-              if (listenerElement.valid && listenerElement.value !== defaultValue) {
+              valueFromThisProperties = listenerElement.properties.value.value;
+              if (listenerElement.valid && valueFromThisProperties !== defaultValue) {
                 eventData.eventName = listener.value;
                 element.actionListener(eventData);
               }
             } else if (isString(listener)) {
               listenerElement = self.getElement(listener);
               defaultValue = self.schema.properties[listener].default;
-              if (listenerElement.valid && listenerElement.value !== defaultValue) {
+              valueFromThisProperties = listenerElement.properties.value.value;
+              if (listenerElement.valid && valueFromThisProperties !== defaultValue) {
                 eventData.eventName = listener;
                 element.actionListener(eventData);
               }
@@ -565,9 +571,9 @@
             }
           }
         }
-        
+
         if (elementsToUpdate.length > 0) {
-          
+
           var eventData = {
             type: property + "-changed",
             detail: {
