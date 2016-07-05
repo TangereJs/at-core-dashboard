@@ -481,25 +481,35 @@
       });
     },
 
-    _updateElementsThatHaveActionListeners: function() {
+    _updateElementsThatHaveActionListeners: function(propertyName) {
       var self = this;
 
       function isObject(obj) {
         return Object.prototype.toString.call(obj) === "[object Object]";
       }
 
-      function isString(obj) {
-        return Object.prototype.toString.call(obj) === "[object String]";
-      }
-
       var properties = self.schema.properties;
       var propertyNames = Object.keys(properties);
+
       // iterate over property names in .schema.properties
       for (var i = 0; i < propertyNames.length; i++) {
         var propName = propertyNames[i];
         var propDef = properties[propName];
+
         // for each property create the event data object that will be passed into actionListener function
-        var eventData = this._createEventDataObject(propName, this.data[propName], this.data);
+        var eventData;
+
+        /**
+        * When _updateElementsThatHaveActionListeners is called from schema-changed and data-changed propertyName will be undefined
+        * When _updateElementsThatHaveActionListeners is called from _updateDataObject propertyName will be name of the element that caused the update
+        */
+        if (propertyName === undefined) {
+          // when dashboard is initialized a event.type and event.parameter will be different for each property
+          eventData = this._createEventDataObject(propName, this.data[propName], this.data);
+        } else {
+          // when dashboard is updated a event.type and event.parameter will be the same for all properties
+          eventData = this._createEventDataObject(propertyName, this.data[propertyName], this.data);
+        }
 
         // action listeners array is part of .schema.properties.<property-name> structure; actionListeners is an array of strings
         // where each string is a name of an element on the dashboard
@@ -530,10 +540,6 @@
 
             // actionListener should be called when user changes listenerElement and listenerElement.valid is true
             if (listenerElement.valid && listenerElement.value !== initialValue) {
-              // update eventData.type with correct value
-              eventData.type = listenerName + "-changed";
-              // update eventData.parameter with correct value
-              eventData.detail.parameter = this.data[listenerName];
               element.actionListener(eventData);
             }
           }
@@ -551,49 +557,19 @@
         return Object.prototype.toString.call(obj) === "[object Object]";
       }
 
-      function isString(obj) {
-        return Object.prototype.toString.call(obj) === "[object String]";
-      }
-
-      var changedElement = this.getElement(property); // holds the reference to the element whose value changed
+      // holds the reference to the element whose value changed
+      var changedElement = this.getElement(property);
       // changedElement can be at-silver-transform which doesn't have valid property
-      if (changedElement.valid !== undefined && !changedElement.valid) {
+      // !! operator turns undefined to false ; !!undefined === false
+      if (!!changedElement.valid) {
+        // if element is not valid just return
         return;
       }
 
       this.data[property] = value;
       this._calculateFormValidState();
 
-      var properties = this.schema.properties;
-      var propertyNames = Object.keys(properties);
-      // create eventData object
-      var eventData = this._createEventDataObject(property, value, this.data);
-
-      // iterate over property names in .schema.properties
-      for (var i = 0; i < propertyNames.length; i++) {
-        var propName = propertyNames[i];
-        var propDef = properties[propName];
-
-        // element should not trigger actionListener function for itself
-        // if element doesn't have action listener skip iteration
-        if (propName === property || !isArray(propDef.actionListeners)) {
-          continue;
-        }
-
-        // if current property has action listeners
-        for (var j = 0; j < propDef.actionListeners.length; j++) {
-          // iterate over all actionListeners
-          var listener = propDef.actionListeners[j];
-          // actionListeners is either array of objects (comes from at-dashboard-designer) or array of strings; we need the listenerName as string
-          var listenerName = isObject(listener) ? listener.value : listener;
-          // if action listener name matches property
-          if (listenerName === property) {
-            var element = this.getElement(propName);
-            // call actionListener function
-            element.actionListener(eventData);
-          }
-        }
-      }
+      this._updateElementsThatHaveActionListeners(property);
 
       this.fire('data-changed', {
         property: property,
@@ -617,7 +593,9 @@
       var isValid = true;
 
       this.elementsToValidate.forEach(function(element) {
-        var elementValid = element.valid;
+        // there are elements that do not have valid property (like at-silver-transform or at-silver-datasource)
+        // these elements are valid by default
+        var elementValid = element.valid !== undefined ? element.valid : true;
         isValid = isValid && elementValid;
       });
 
