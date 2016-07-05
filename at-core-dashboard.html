@@ -365,6 +365,10 @@
       var width = resizeSensor.queryWidth();
       this.updateLayout(width);
 
+      /**
+       * In scenarios where .data is set first and .schema set second, elements with action listeners need to be updated
+       * since elements have valid values. The same holds true, when elements have default values set in .schema.properties.<property-name>.default
+       */
       this._updateElementsThatHaveActionListeners();
     },
     /* *ij*
@@ -461,6 +465,9 @@
         console.log('at-core-dashboard expects objects as new value, but got ' + schemaHelpers.formatJson(newValue) + ' instead');
       }
 
+      /**
+       * When .data is set elements with action listeners need to be updated since they have valid values
+       */
       this._updateElementsThatHaveActionListeners();
 
       this._isBatchUpdate = false;
@@ -483,42 +490,47 @@
 
       var properties = self.schema.properties;
       var propertyNames = Object.keys(properties);
-
+      // iterate over property names in .schema.properties
       for (var i = 0; i < propertyNames.length; i++) {
         var propName = propertyNames[i];
         var propDef = properties[propName];
-        var eventData = {
-          type: propName + "-changed",
-          detail: {
-            parameter: this.data[propName],
-            model: {
-              state: this.data
-            }
-          }
-        };
+        // for each property create the event data object that will be passed into actionListener function
+        var eventData = this._createEventDataObject(propName, this.data[propName], this.data);
 
+        // action listeners array is part of .schema.properties.<property-name> structure; actionListeners is an array of strings
+        // where each string is a name of an element on the dashboard
         if (isArray(propDef.actionListeners)) {
           for (var j = 0; j < propDef.actionListeners.length; j++) {
-            var listenerElement;
-            var defaultValue, valueFromThisProperties;
+            var listenerElement; // this holds the reference to the element whose name is in the actionListeners array
+            var defaultValue; // default value is value from at-core-dashboard.schema.properties.<element-name>.default
+            var initialValue; // initialValue is initial value of the listener element, as in listenerElement.properties.value.value
+            var element = self.getElement(propName); // element holds the reference to the element on which actionListener function will be called
             var listener = propDef.actionListeners[j];
-            var element = self.getElement(propName);
-            if (isObject(listener)) {
-              listenerElement = self.getElement(listener.value);
-              defaultValue = self.schema.properties[listener.value].default;
-              valueFromThisProperties = listenerElement.properties.value.value;
-              if (listenerElement.valid && valueFromThisProperties !== defaultValue) {
-                eventData.eventName = listener.value;
-                element.actionListener(eventData);
-              }
-            } else if (isString(listener)) {
-              listenerElement = self.getElement(listener);
-              defaultValue = self.schema.properties[listener].default;
-              valueFromThisProperties = listenerElement.properties.value.value;
-              if (listenerElement.valid && valueFromThisProperties !== defaultValue) {
-                eventData.eventName = listener;
-                element.actionListener(eventData);
-              }
+            // actionListeners is either array of objects (comes from at-dashboard-designer) or array of strings; we need the listenerName as string
+            var listenerName = isObject(listener) ? listener.value : listener;
+
+            // element should not contain self in its actionListeners array; if that is the case, just skip the rest of the iteration
+            if (listenerName === propName) {
+              continue;
+            }
+
+            listenerElement = self.getElement(listenerName);
+            defaultValue = self.schema.properties[listenerName].default;
+            initialValue = listenerElement.properties.value.value;
+
+            // actionListener should not be called when .schema.properties.listenerElement is set without defaultValue
+            // then listenerElement.valid is true and listenerElement.value === initialValue
+
+            // actionListener should be called when .schema.properties.listenerElement is set with defaultValue
+            // and listenerElement.valid is true; then listenerElement.value === defaultValue
+
+            // actionListener should be called when user changes listenerElement and listenerElement.valid is true
+            if (listenerElement.valid && listenerElement.value !== initialValue) {
+              // update eventData.type with correct value
+              eventData.type = listenerName + "-changed";
+              // update eventData.parameter with correct value
+              eventData.detail.parameter = this.data[listenerName];
+              element.actionListener(eventData);
             }
           }
         }
@@ -542,52 +554,35 @@
       this.data[property] = value;
       this._calculateFormValidState();
 
-      var changedElement = this.getElement(property);
+      var changedElement = this.getElement(property); // holds the reference to the element whose value changed
+      // changedElement can be at-silver-transform which doesn't have valid property
       if (changedElement.valid === undefined || changedElement.valid) {
-        var elementsToUpdate = [];
         var properties = this.schema.properties;
         var propertyNames = Object.keys(properties);
+        // create eventData object
+        var eventData = this._createEventDataObject(property, value, this.data);
 
+        // iterate over property names in .schema.properties
         for (var i = 0; i < propertyNames.length; i++) {
           var propName = propertyNames[i];
-          if (propName != property) {
-            var propDef = properties[propName];
-            if (isArray(propDef.actionListeners)) {
-              for (var j = 0; j < propDef.actionListeners.length; j++) {
-                var listener = propDef.actionListeners[j];
-                var element;
-                if (isObject(listener)) {
-                  if (listener.value === property) {
-                    element = this.getElement(propName);
-                    elementsToUpdate.push(element);
-                  }
-                } else if (isString(listener)) {
-                  if (listener === property) {
-                    element = this.getElement(propName);
-                    elementsToUpdate.push(element);
-                  }
-                }
-              }
-            }
+          var propDef = properties[propName];
+
+          // element should not trigger actionListener function for itself
+          // if element doesn't have action listener skip iteration
+          if (propName === property || !isArray(propDef.actionListeners)) {
+            continue;
           }
-        }
 
-        if (elementsToUpdate.length > 0) {
-
-          var eventData = {
-            type: property + "-changed",
-            detail: {
-              parameter: value,
-              model: {
-                state: this.data
-              }
-            }
-          };
-
-          // call action on all listening elements
-          for (var k = 0; k < elementsToUpdate.length; k++) {
-            var element = elementsToUpdate[k];
-            if (isFunction(element.actionListener)) {
+          // if current property has action listeners
+          for (var j = 0; j < propDef.actionListeners.length; j++) {
+            // iterate over all actionListeners
+            var listener = propDef.actionListeners[j];
+            // actionListeners is either array of objects (comes from at-dashboard-designer) or array of strings; we need the listenerName as string
+            var listenerName = isObject(listener) ? listener.value : listener;
+            // if action listener name matches property
+            if (listenerName === property) {
+              var element = this.getElement(propName);
+              // call actionListener function
               element.actionListener(eventData);
             }
           }
@@ -598,6 +593,18 @@
         property: property,
         value: this.data
       });
+    },
+
+    _createEventDataObject: function (name, value, data) {
+      return {
+        type: name + "-changed",
+        detail: {
+          parameter: value,
+          model: {
+            state: data
+          }
+        }
+      }
     },
 
     _calculateFormValidState: function() {
