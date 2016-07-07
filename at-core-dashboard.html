@@ -6,6 +6,7 @@
 <link rel="import" href="../at-form-daterange/at-form-daterange.html">
 <link rel="import" href="../at-chart-core/at-chart-core.html">
 <link rel="import" href="../at-chart-strudel/at-chart-strudel.html">
+<link rel="import" href="../at-silver-transform/at-silver-transform.html">
 <link rel="import" href="at-core-dashboard-echo.html">
 <link rel="import" href="../at-core-schema/at-core-schema.html">
 
@@ -539,7 +540,8 @@
             // and listenerElement.valid is true; then listenerElement.value === defaultValue
 
             // actionListener should be called when user changes listenerElement and listenerElement.valid is true
-            if (listenerElement.valid && listenerElement.value !== initialValue) {
+            var listenerValueValid = listenerElement.valid !== undefined ? listenerElement.valid : true;
+            if (listenerValueValid && listenerElement.value !== initialValue) {
               element.actionListener(eventData);
             }
           }
@@ -561,7 +563,12 @@
       var changedElement = this.getElement(property);
       // changedElement can be at-silver-transform which doesn't have valid property
       // !! operator turns undefined to false ; !!undefined === false
-      if (changedElement.valid !== undefined && !changedElement.valid) {
+      // if (changedElement.valid !== undefined && !changedElement.valid) {
+      //   // if element is not valid just return
+      //   return;
+      // }
+
+      if (!!changedElement.valid) {
         // if element is not valid just return
         return;
       }

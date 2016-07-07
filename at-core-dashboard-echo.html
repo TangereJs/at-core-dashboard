@@ -1,4 +1,4 @@
-<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../tangere/tangere.html">
 <link rel="import" href="../at-theme/at-theme.html">
 <link rel="import" href="../at-carbon-moment/momentjs-import.html">
 
@@ -17,34 +17,34 @@
     'use strict';
     Polymer({
       is: 'at-core-dashboard-echo',
-      
+
       properties: {
         template: {
           type: String,
           value: ""
         }
       },
-      
+
       $meta: [{
         title: "Dashboard echo",
         type: "element",
         xtype: "at-core-dashboard-echo"
       }],
-      
+
       ready: function () {
 
       },
-      
+
       actionListener:function (event) {
-        
+
         function isArray(obj) {
           return Object.prototype.toString.call(obj) === "[object Array]";
         }
         function isEmptyString(obj) {
           return Object.prototype.toString.call(obj) === "[object String]" && obj === "";
         }
+
         var template = this.template;
-        var templates = [];
 
         if (isEmptyString(template)) {
           Polymer.dom(this.$.insertPoint).innerHTML = "";
@@ -58,15 +58,11 @@
           return;
         }
 
-        if (template.indexOf(',') === -1) {
-          templates.push(template);
-        } else {
-          var templateParts = template.split(',');
-          for (var i = 0; i < templateParts.length; i++) {
-            var templatePart = templateParts[i];
-            templatePart = templatePart.trim();
-            templates.push(templatePart);
-          }
+        var state = event.detail.model.state;
+
+        var matchedParts = template.match(/\{\{([\w]+)\}\}/gm);
+        if (!matchedParts) {
+          return;
         }
 
         var insertPoint = this.$.insertPoint;
@@ -74,14 +70,13 @@
         var divPrototype = document.createElement('div');
         var docFragment = document.createDocumentFragment();
 
-        for (var j = 0; j < templates.length; j++) {
-          template = templates[j];
-          var fieldName = template.substring((template.indexOf("{{")+2), template.indexOf("}}"));
-          template = template.replace("{{"+fieldName+"}}", event.detail.model.state[fieldName]);
+        matchedParts.forEach(function (matchedPart, index) {
+          var fieldName = matchedPart.substring((matchedPart.indexOf("{{")+2), matchedPart.indexOf("}}"));
           var div = divPrototype.cloneNode(true);
-          div.textContent = template;
+          var value = template.replace(matchedPart, state[fieldName]);
+          div.textContent = value;
           Polymer.dom(docFragment).appendChild(div);
-        }
+        });
 
         Polymer.dom(insertPoint).appendChild(docFragment);
       }
