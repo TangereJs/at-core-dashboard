@@ -561,7 +561,7 @@
       var changedElement = this.getElement(property);
       // changedElement can be at-silver-transform which doesn't have valid property
       // !! operator turns undefined to false ; !!undefined === false
-      if (!!changedElement.valid) {
+      if (changedElement.valid !== undefined && !changedElement.valid) {
         // if element is not valid just return
         return;
       }
