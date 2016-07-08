@@ -313,7 +313,6 @@
               }
 
               formElement.addEventListener('value-changed', function(event) {
-                // event.stopPropagation();
                 if (!self._isBatchUpdate) {
                   self._updateDataObject(event.target.id, event.detail.value);
                 }
@@ -456,10 +455,10 @@
           }
         });
       }
-
+      var self = this;
       if (schemaHelpers.isObject(newValue)) {
         Object.keys(newValue).forEach(function(propertyName) {
-          fieldElement = fieldsContainer.querySelector('#' + propertyName);
+          fieldElement = self.getElement(propertyName);
           if (schemaHelpers.valueNotReadOnly(fieldElement)) {
             fieldElement.value = newValue[propertyName];
           }
@@ -542,7 +541,16 @@
             // actionListener should be called when user changes listenerElement and listenerElement.valid is true
             var listenerValueValid = listenerElement.valid !== undefined ? listenerElement.valid : true;
             if (listenerValueValid && listenerElement.value !== initialValue) {
+
+              // at-silver-transform fires value-changed event but in data-changed _isBatchUpdate is true
+              // so that event is suppressed; this suppression can be worked around by updating the at-core-dashboard.data
+              // object after actionListener function finishes executing
               element.actionListener(eventData);
+
+              // at-core-dashboard-echo doesn't have value property
+              if (element.value !== undefined) {
+                this.data[propName] = element.value;
+              }
             }
           }
         }
@@ -562,13 +570,7 @@
       // holds the reference to the element whose value changed
       var changedElement = this.getElement(property);
       // changedElement can be at-silver-transform which doesn't have valid property
-      // !! operator turns undefined to false ; !!undefined === false
-      // if (changedElement.valid !== undefined && !changedElement.valid) {
-      //   // if element is not valid just return
-      //   return;
-      // }
-
-      if (!!changedElement.valid) {
+      if (changedElement.valid !== undefined && !changedElement.valid) {
         // if element is not valid just return
         return;
       }

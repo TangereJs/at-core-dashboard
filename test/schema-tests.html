@@ -49,11 +49,11 @@
             startDate: "01-05-2016",
             endDate: "31-05-2016"
           },
-          chartCore4: {
-            type: 'element',
-            xtype: 'at-chart-core',
-            title: "Chart core 4"
-          },
+          // chartCore4: {
+          //   type: 'element',
+          //   xtype: 'at-chart-core',
+          //   title: "Chart core 4"
+          // },
           chartStrudel5: {
             type: 'element',
             xtype: "at-chart-strudel",
@@ -75,8 +75,8 @@
       test('are elements from schema present on dashboard', function() {
         var dashboard = fixture('schemaTests');
         dashboard.schema = schema;
-
-        var elementNames = ["text1", "date2", "daterange3", "chartCore4", "chartStrudel5", "dashboardEcho6"];
+        //"chartCore4",
+        var elementNames = ["text1", "date2", "daterange3", "chartStrudel5", "dashboardEcho6"];
 
         elementNames.forEach(function(name, index) {
           var element = dashboard.getElement(name);
@@ -190,17 +190,15 @@
         flush(function () {
           var echo1 = dashboard.getElement('dashboardEcho1');
           var div = Polymer.dom(echo1.$.insertPoint).children[0];
-          assert.equal(div.textContent, "field1=lorem ipsum 1");
+          assert.equal(div.textContent, "transform1=field1=lorem ipsum 1");
 
           var echo2 = dashboard.getElement('dashboardEcho2');
           div = Polymer.dom(echo2.$.insertPoint).children[0];
-          assert.equal(div.textContent, "field2=lorem ipsum 2");
+          assert.equal(div.textContent, "transform2=field2=lorem ipsum 2");
 
           var echo3 = dashboard.getElement('dashboardEcho3');
           div = Polymer.dom(echo3.$.insertPoint).children[0];
-          assert.equal(div.textContent, "field1=lorem ipsum 1");
-          div = Polymer.dom(echo3.$.insertPoint).children[1];
-          assert.equal(div.textContent, "field2=lorem ipsum 2");
+          assert.equal(div.textContent, "transform3=field1=lorem ipsum 1, field2=lorem ipsum 2");
           done();
         });
 
