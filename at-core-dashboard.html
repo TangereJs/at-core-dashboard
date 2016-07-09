@@ -30,15 +30,15 @@
       at-form-checkbox {
         min-height: 76px;
       }
-      /* workaround for IE11 flexbox min-height bug */
+        /* workaround for IE11 flexbox min-height bug */
 
-      _:-ms-fullscreen,
-      at-form-checkbox::before {
-        content: "";
-        display: inline-block;
-        min-height: 38px;
-        visibility: hidden;
-      }
+        _:-ms-fullscreen,
+        at-form-checkbox::before {
+          content: "";
+          display: inline-block;
+          min-height: 38px;
+          visibility: hidden;
+        }
 
       .vertical .col-6.at-form-checkbox {
         min-height: 32px;
@@ -48,15 +48,15 @@
       .vertical .col-6 at-form-checkbox {
         min-height: 32px;
       }
-      /* workaround for IE11 flexbox min-height bug */
+        /* workaround for IE11 flexbox min-height bug */
 
-      _:-ms-fullscreen,
-      .vertical .col-6 at-form-checkbox::before {
-        content: "";
-        display: inline-block;
-        min-height: 16px;
-        visibility: hidden;
-      }
+        _:-ms-fullscreen,
+        .vertical .col-6 at-form-checkbox::before {
+          content: "";
+          display: inline-block;
+          min-height: 16px;
+          visibility: hidden;
+        }
     </style>
     <div class="at-core-dashboard-wrapper">
       <at-core-resize-sensor id="resizeSensor"></at-core-resize-sensor>
@@ -86,7 +86,7 @@
        */
       schema: {
         type: Object,
-        value: function() {
+        value: function () {
           var result = {
             properties: {}
           };
@@ -96,7 +96,7 @@
       },
       data: {
         type: Object,
-        value: function() {
+        value: function () {
           return {};
         },
         observer: 'dataChanged'
@@ -149,13 +149,13 @@
       }
 
     },
-    set valid(newValue) {},
-    ready: function() {
+    set valid(newValue) { },
+    ready: function () {
       this.elementsToValidate = [];
       this._isReady = true;
 
       var self = this;
-      this.addEventListener('focus', function(event) {
+      this.addEventListener('focus', function (event) {
         if (event.currentTarget.is !== "at-core-dashboard") {
           return;
         }
@@ -174,19 +174,19 @@
         }
       });
     },
-    attached: function() {
+    attached: function () {
       var resizeSensor = this.$.resizeSensor;
       var coreForm = this;
       resizeSensor.reset();
       var currWidth = resizeSensor.queryWidth();
       coreForm.updateLayout(currWidth);
-      resizeSensor.addEventListener('resize-sensed', function(event) {
+      resizeSensor.addEventListener('resize-sensed', function (event) {
         var newWidth = event.detail.value.width;
         // console.log('at-core-dashboard new width: ' + newWidth + 'px');
         coreForm.updateLayout(newWidth);
       });
     },
-    updateLayout: function(newWidth, oldWidth) {
+    updateLayout: function (newWidth, oldWidth) {
       // 377 is from fibonacci sequence; it should do just fine
       if (newWidth < 600) {
         this.layout = "vertical";
@@ -194,14 +194,14 @@
         this.layout = "horizontal";
       }
     },
-    hideChanged: function(newValue, oldValue) {
+    hideChanged: function (newValue, oldValue) {
       var self = this;
       var insertPoint = this.$.insertPoint;
 
       if (this.schema && this.schema.properties) {
         var properties = this.schema.properties;
         var propNames = Object.keys(properties);
-        propNames.forEach(function(propName, index) {
+        propNames.forEach(function (propName, index) {
           var formElement = Polymer.dom(insertPoint).querySelector('#' + propName);
           if (formElement) {
             Polymer.dom(formElement.parentElement).classList.remove('hidden');
@@ -215,7 +215,7 @@
     // this function is here to solve the problem in at-form-designer
     // when user switches to field settings tab, resize sensor is incorrectly initialized
     // so this function needs to be called to reinitialize the sensor
-    resetResizeSensor: function() {
+    resetResizeSensor: function () {
       var resizeSensor = this.$.resizeSensor;
       var coreForm = this;
       resizeSensor.reset();
@@ -223,7 +223,7 @@
       coreForm.updateLayout(currWidth);
     },
     // ------------------------------
-    schemaChanged: function(newValue, oldValue) {
+    schemaChanged: function (newValue, oldValue) {
       if (this._isReady) {
         var self = this;
         var schemaHelpers = window.schemaHelpers;
@@ -246,6 +246,7 @@
           }
         }
 
+
         self.elementsToValidate = [];
 
         var fieldsContainer = this.$.insertPoint;
@@ -265,18 +266,17 @@
 
         if (propertyDefinitions) {
           propertyNames = Object.keys(propertyDefinitions);
-          propertyNames.forEach(function(propertyName) {
+
+          // initialize data with defaults when empty
+          if (Object.keys(self.data).length == 0) {
+            self.data = this._calculateInitialDataFromSchemaProperties(propertyDefinitions);
+          }
+
+          // add schema elements to DOM
+          propertyNames.forEach(function (propertyName) {
+
             if (schemaHelpers.isPropertyNameValid(propertyName)) {
               propertyDefinition = propertyDefinitions[propertyName];
-
-              // handle default value
-              defaultValue = propertyDefinition.default;
-              value = self.data[propertyName];
-              // if default value is not null or undefined and regular value is null or undefined
-              if (schemaHelpers.notNullOrEmpty(defaultValue) && schemaHelpers.isNullOrEmpty(value)) {
-                // make the default value regular value
-                self.data[propertyName] = defaultValue;
-              }
 
               displayType = schemaHelpers.getDisplayType(propertyDefinition, []);
 
@@ -288,6 +288,7 @@
 
               // create element for field
               formElement = schemaHelpers.createElement(propertyName, displayType, propertyDefinition);
+              Polymer.dom(formElement).setAttribute('id', propertyName);
 
               // create the field container
               fieldContainer = document.createElement('div');
@@ -299,26 +300,19 @@
                 Polymer.dom(fieldContainer).classList.add("at-form-checkbox");
               }
 
-              if (schemaHelpers.isNullOrEmpty(self.data[propertyName])) {
-                // at-core-dashboard.data doesn't contain an entry for the current property
-                // add initial value of the formElement to the at-core-dashboard.data
-                self.data[propertyName] = formElement.value;
-              } else {
-                // else set initial value from at-core-dashboard.data to fromElement
-                formElement.value = self.data[propertyName];
-              }
               if (formElement.clearUIValidState !== undefined) {
                 // at-form-section doesn't have clearUIValidState function nor does it need one
                 formElement.clearUIValidState();
               }
 
-              formElement.addEventListener('value-changed', function(event) {
-                if (!self._isBatchUpdate) {
-                  self._updateDataObject(event.target.id, event.detail.value);
-                }
+              formElement.addEventListener('value-changed', function (event) {
+
+                // get dom node of changed element
+                var changedElement = self.getElement(event.target.id);
+                self._updateDataObject(event.target.id, changedElement, event.detail.value);
               });
 
-              Polymer.dom(formElement).setAttribute('id', propertyName);
+
               if (formElement.valid !== undefined) {
                 self.elementsToValidate.push(formElement);
               }
@@ -345,6 +339,33 @@
               console.log('Property definition is:  ', schemaHelpers.formatJson(propertyDefinition));
             }
           });
+
+
+          // initialize default values after elements are added to the DOM to ensure that listeners are already in place
+          propertyNames.forEach(function (propertyName) {
+
+            propertyDefinition = propertyDefinitions[propertyName];
+            formElement = self.getElement(propertyName);
+
+            if (!formElement) return;
+
+            // handle default value
+            defaultValue = propertyDefinition.default;
+
+            // if default value is not null or undefined and regular value is null or undefined
+            // loading initial value will trigger value-changed event to update .data if defaultValue is valid
+            if (schemaHelpers.notNullOrEmpty(defaultValue) && schemaHelpers.isNullOrEmpty(value)) {
+              formElement.value = defaultValue;
+
+              // *ma* setting the defautValue should be after setting up the event listener and only the listener should handle
+              //      the value change; but it seems that setting the initial value doesn't trigger a change event consistently
+              //      so as a workaround we call the event handler directly before setting up the listener
+
+              self._updateDataObject(propertyName, formElement, defaultValue);
+            }
+
+          });
+
           self.fire('at-core-dashboard-rendered');
         } else {
           //TODO Implement clear of data property
@@ -355,11 +376,6 @@
         Polymer.dom(clearfixDiv).classList.add('clearfix');
         Polymer.dom(fieldsContainer).appendChild(clearfixDiv);
 
-        // if any element is required in schema its valid state is updated after creation
-        // at-core-dashboard needs to reflect that state
-        if (self.elementsToValidate.length > 0) {
-          self._calculateFormValidState();
-        }
       }
 
       var resizeSensor = this.$.resizeSensor;
@@ -367,15 +383,10 @@
       var width = resizeSensor.queryWidth();
       this.updateLayout(width);
 
-      /**
-       * In scenarios where .data is set first and .schema set second, elements with action listeners need to be updated
-       * since elements have valid values. The same holds true, when elements have default values set in .schema.properties.<property-name>.default
-       */
-      this._updateElementsThatHaveActionListeners();
     },
+
     /* *ij*
-     OK. Imperative data binding doesn't work in polymer anymore.
-     It may happen in the future but not in near future.
+     Imperative data binding doesn't work in polymer 1.x.
      Using at-core-dashboard.data[field] = 'newValue' doesn't work. Its not possible to bind to at-core-dashboard.data[field] to update field value automatically
      Explained in https://github.com/Polymer/polymer/issues/1778 and https://github.com/Polymer/polymer/issues/1796
 
@@ -383,14 +394,8 @@
      The purpose of this function is, obviously, to update a value of the specific field.
      This function will update the .data object and .value of the field with provided elementId.
      If the field with provided elementId doesn't exist a debug message will be loged in the console
-
-     Alternative to this approach is to create a completely new object each time you want to update the .data property
-     IMO, this approach is a waste of time. An updateFormElementData function is much more efficient
-
-     Another alternative to this approach is to have a function that will return the element itself. Than the client can do whatever he likes with the element
-     not just update value. This approach seems reasonable for setFieldState action in at-form-rule-edit
      */
-    updateFormElementData: function(elementId, value) {
+    updateFormElementData: function (elementId, value) {
       var fieldsContainer = this.$.insertPoint,
         fieldElement = Polymer.dom(fieldsContainer).querySelector('#' + elementId);
 
@@ -408,7 +413,8 @@
       }
     },
 
-    setElementState: function(elementId, state, value) {
+    setElementState: function (elementId, state, value) {
+
       var element = Polymer.dom(this.$.insertPoint).querySelector('#' + elementId);
       if (element) {
         element[state] = value;
@@ -418,7 +424,8 @@
       }
     },
 
-    getElement: function(elementId) {
+    getElement: function (elementId) {
+
       var insertPoint = this.$.insertPoint;
       var selector = '#' + elementId;
       var element = Polymer.dom(insertPoint).querySelector(selector);
@@ -426,10 +433,13 @@
       return element;
     },
 
-    dataChanged: function(newValue, oldValue) {
+    dataChanged: function (newValue, oldValue) {
+
       if (!this._isReady) {
         return;
       }
+
+      return; // *ma*   can data be changed without changing an element first ??
 
       var fieldsContainer = Polymer.dom(this.$.insertPoint);
       var fieldElement;
@@ -446,18 +456,17 @@
         }
       }
 
-      this._isBatchUpdate = true;
-
       if (schemaHelpers.isObject(oldValue)) {
-        Object.keys(initialData).forEach(function(propertyName) {
+        Object.keys(initialData).forEach(function (propertyName) {
           if (!newValue.hasOwnProperty(propertyName)) {
             newValue[propertyName] = initialData[propertyName];
           }
         });
       }
+
       var self = this;
       if (schemaHelpers.isObject(newValue)) {
-        Object.keys(newValue).forEach(function(propertyName) {
+        Object.keys(newValue).forEach(function (propertyName) {
           fieldElement = self.getElement(propertyName);
           if (schemaHelpers.valueNotReadOnly(fieldElement)) {
             fieldElement.value = newValue[propertyName];
@@ -467,118 +476,88 @@
         console.log('at-core-dashboard expects objects as new value, but got ' + schemaHelpers.formatJson(newValue) + ' instead');
       }
 
-      /**
-       * When .data is set elements with action listeners need to be updated since they have valid values
-       */
-      this._calculateFormValidState();
-      if (this.valid) {
-        this._updateElementsThatHaveActionListeners();
-      }
-
-      this._isBatchUpdate = false;
       this.fire('data-changed', {
         value: this.data
       });
     },
 
-    _updateElementsThatHaveActionListeners: function(propertyName) {
-      var self = this;
+    // invoke listeners on all elements listening for event
+    _invokeActionListeners: function (event) {
 
-      function isObject(obj) {
-        return Object.prototype.toString.call(obj) === "[object Object]";
-      }
-
-      var properties = self.schema.properties;
+      var properties = this.schema.properties;
       var propertyNames = Object.keys(properties);
 
-      // iterate over property names in .schema.properties
+      // check each element in the schema if it's listing for event.name
       for (var i = 0; i < propertyNames.length; i++) {
         var propName = propertyNames[i];
         var propDef = properties[propName];
+        var element = this.getElement(propName); // element on which actionListener function will be called
 
-        // for each property create the event data object that will be passed into actionListener function
-        var eventData;
+        var actionListeners;
 
-        /**
-        * When _updateElementsThatHaveActionListeners is called from schema-changed and data-changed propertyName will be undefined
-        * When _updateElementsThatHaveActionListeners is called from _updateDataObject propertyName will be name of the element that caused the update
-        */
-        if (propertyName === undefined) {
-          // when dashboard is initialized a event.type and event.parameter will be different for each property
-          eventData = this._createEventDataObject(propName, this.data[propName], this.data);
-        } else {
-          // when dashboard is updated a event.type and event.parameter will be the same for all properties
-          eventData = this._createEventDataObject(propertyName, this.data[propertyName], this.data);
+        if (propName == event.detail.srcName) {
+          continue; // skip, element cannot listen to self
         }
 
-        // action listeners array is part of .schema.properties.<property-name> structure; actionListeners is an array of strings
-        // where each string is a name of an element on the dashboard
-        if (isArray(propDef.actionListeners)) {
-          for (var j = 0; j < propDef.actionListeners.length; j++) {
-            var listenerElement; // this holds the reference to the element whose name is in the actionListeners array
-            var defaultValue; // default value is value from at-core-dashboard.schema.properties.<element-name>.default
-            var initialValue; // initialValue is initial value of the listener element, as in listenerElement.properties.value.value
-            var element = self.getElement(propName); // element holds the reference to the element on which actionListener function will be called
-            var listener = propDef.actionListeners[j];
-            // actionListeners is either array of objects (comes from at-dashboard-designer) or array of strings; we need the listenerName as string
-            var listenerName = isObject(listener) ? listener.value : listener;
-
-            // element should not contain self in its actionListeners array; if that is the case, just skip the rest of the iteration
-            if (listenerName === propName) {
-              continue;
-            }
-
-            listenerElement = self.getElement(listenerName);
-            defaultValue = self.schema.properties[listenerName].default;
-            initialValue = listenerElement.properties.value.value;
-
-            // actionListener should not be called when .schema.properties.listenerElement is set without defaultValue
-            // then listenerElement.valid is true and listenerElement.value === initialValue
-
-            // actionListener should be called when .schema.properties.listenerElement is set with defaultValue
-            // and listenerElement.valid is true; then listenerElement.value === defaultValue
-
-            // actionListener should be called when user changes listenerElement and listenerElement.valid is true
-            var listenerValueValid = listenerElement.valid !== undefined ? listenerElement.valid : true;
-            if (listenerValueValid && listenerElement.value !== initialValue) {
-
-              // at-silver-transform fires value-changed event but in data-changed _isBatchUpdate is true
-              // so that event is suppressed; this suppression can be worked around by updating the at-core-dashboard.data
-              // object after actionListener function finishes executing
-              element.actionListener(eventData);
-
-              // at-core-dashboard-echo doesn't have value property
-              if (element.value !== undefined) {
-                this.data[propName] = element.value;
-              }
-            }
+        // ensure that actionListeners is an array
+        if (typeof (propDef.actionListeners) == "string") {
+          if (!propDef.actionListeners) {
+            actionListeners = [propDef.actionListeners]; // convert single string to string array
+          } else {
+            actionListeners = []; // convert empty string into empty array
           }
+        } else {
+          actionListeners = propDef.actionListeners;
+        }
+
+        // ignore properties without listeners
+        if (actionListeners.length == 0) continue;
+
+        for (var j = 0; j < actionListeners.length; j++) {
+
+          var listenerName = actionListeners[j];
+
+          if (typeof listenerName == "object" && !!listenerName.value) {
+            // convert object { value: name} to "name"
+            listenerName = listenerName.value;
+          }
+
+          // skip if element is not listening for current event
+          // *todo* decide if eventtype for element name is  'name' (designer)   or  'name-changed'  (which seems more logical)
+          if (listenerName != event.type && listenerName + "-changed" != event.type) {
+            continue;
+          }
+
+          element.actionListener(event);
+
         }
       }
     },
 
     /*
-     * This function is called on value-changed event for each element on the form
+     * This function is called on value-changed event for any element on the form
      * property is property name
      * value is the new value to be set
      */
-    _updateDataObject: function(property, value) {
+    _updateDataObject: function (property, changedElement, value) {
       function isObject(obj) {
         return Object.prototype.toString.call(obj) === "[object Object]";
       }
 
-      // holds the reference to the element whose value changed
-      var changedElement = this.getElement(property);
-      // changedElement can be at-silver-transform which doesn't have valid property
+      // if an element has an .valid flag then the change is ignored when element value is not valid
       if (changedElement.valid !== undefined && !changedElement.valid) {
-        // if element is not valid just return
-        return;
+        return; // ignore change
       }
 
       this.data[property] = value;
-      this._calculateFormValidState();
 
-      this._updateElementsThatHaveActionListeners(property);
+      /* ma
+      this._calculateFormValidState();
+      */
+
+      var event = this._createEventObject(property + "-changed", property, changedElement, value, this.data);
+
+      this._invokeActionListeners(event);
 
       this.fire('data-changed', {
         property: property,
@@ -586,10 +565,11 @@
       });
     },
 
-    _createEventDataObject: function (name, value, data) {
+    _createEventObject: function (type, srcName, srcElement, value, data) {
       return {
-        type: name + "-changed",
+        type: type,
         detail: {
+          srcName: srcName,
           parameter: value,
           model: {
             state: data
@@ -598,10 +578,11 @@
       }
     },
 
-    _calculateFormValidState: function() {
+    /* data is always valid
+    _calculateFormValidState: function () {
       var isValid = true;
 
-      this.elementsToValidate.forEach(function(element) {
+      this.elementsToValidate.forEach(function (element) {
         // there are elements that do not have valid property (like at-silver-transform or at-silver-datasource)
         // these elements are valid by default
         var elementValid = element.valid !== undefined ? element.valid : true;
@@ -612,16 +593,17 @@
 
       return isValid;
     },
+    */
 
     /*
      * Validates the form
      * It calls validate method of each element in elementsToValidate array
      * Form is valid if all elements are valid. Form is invalid if at least one element is invalid.
      */
-    validate: function() {
+    validate: function () {
       var isValid = true;
 
-      this.elementsToValidate.forEach(function(element) {
+      this.elementsToValidate.forEach(function (element) {
         var elementValid = element.validate();
         isValid = isValid && elementValid;
       });
@@ -631,12 +613,12 @@
       return isValid;
     },
 
-    disabledChanged: function(newValue, oldValue) {
+    disabledChanged: function (newValue, oldValue) {
       var fieldsContainer = this.$.insertPoint;
       var fieldElement;
       var properties = this.schema.properties;
 
-      Object.keys(properties).forEach(function(propertyName) {
+      Object.keys(properties).forEach(function (propertyName) {
         fieldElement = Polymer.dom(fieldsContainer).querySelector('#' + propertyName);
         if (fieldElement) {
           if (newValue) {
@@ -647,16 +629,18 @@
         }
       });
     },
-    layoutChanged: function(newValue, oldValue) {
+
+    layoutChanged: function (newValue, oldValue) {
       this.toggleClass('vertical', newValue === 'vertical', this.$.insertPoint);
     },
-    _convertPropertiesToSchemaValues: function(properties) {
+
+    _convertPropertiesToSchemaValues: function (properties) {
       var result = {
-          schema: {
-            properties: {}
-          },
-          values: {}
+        schema: {
+          properties: {}
         },
+        values: {}
+      },
         property,
         propDef,
         innerProp,
@@ -676,35 +660,25 @@
 
       return result;
     },
+
     /**
-     * This function is created for task #773 at-core-dashboard .data handling
      * this function creates initial data object from schema properties
-     * value for each entry is either default value from element or default value from schema (specified with default: '<value>')
-     * dataChanged function calls this function
      */
-    _calculateInitialDataFromSchemaProperties: function(properties) {
-      var insertPoint = this.$.insertPoint;
+    _calculateInitialDataFromSchemaProperties: function (properties) {
+
       var result = {};
       var propertyNames = Object.keys(properties);
       var propSchemaDef;
       var calculatedValue;
 
-      propertyNames.forEach(function(propName, index) {
+      propertyNames.forEach(function (propName, index) {
         propSchemaDef = properties[propName];
 
         // if .default exists in propSchemaDef that is the calculatedValue
         if (propSchemaDef.default !== undefined) {
           calculatedValue = propSchemaDef.default;
-        } else {
-          // form is already created; query the self.$.insertPoint and get default value from element.properties.value.value
-          var element = Polymer.dom(insertPoint).querySelector('#' + propName);
-          if (element.properties.value !== undefined && element.properties.value.value !== undefined) {
-            // at-form-section doesn't have value property nor does it need one
-            calculatedValue = element.properties.value.value;
-          }
+          result[propName] = calculatedValue;
         }
-
-        result[propName] = calculatedValue;
       });
 
       return result;
