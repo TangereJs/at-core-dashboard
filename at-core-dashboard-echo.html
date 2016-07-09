@@ -67,17 +67,17 @@
 
         var insertPoint = this.$.insertPoint;
         Polymer.dom(insertPoint).innerHTML = "";
-        var divPrototype = document.createElement('div');
+        var div = document.createElement('div');
         var docFragment = document.createDocumentFragment();
+        var result = template;
 
         matchedParts.forEach(function (matchedPart, index) {
           var fieldName = matchedPart.substring((matchedPart.indexOf("{{")+2), matchedPart.indexOf("}}"));
-          var div = divPrototype.cloneNode(true);
-          var value = template.replace(matchedPart, state[fieldName]);
-          div.textContent = value;
-          Polymer.dom(docFragment).appendChild(div);
+          result = result.split(matchedPart).join(state[fieldName]);
         });
-
+        
+        div.textContent = result;
+        Polymer.dom(docFragment).appendChild(div);    
         Polymer.dom(insertPoint).appendChild(docFragment);
       }
     });
