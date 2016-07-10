@@ -22,6 +22,10 @@
         template: {
           type: String,
           value: ""
+        },
+        modelRoot: {
+          type: String,
+          value: ""
         }
       },
 
@@ -35,7 +39,22 @@
 
       },
 
-      actionListener:function (event) {
+      _getObjPath: function (obj, path) {
+
+        if (!path) return obj;
+        var paths = path.split('.'), current = obj;
+      
+        for (var i = 0; i < paths.length; ++i) {
+          if (current[paths[i]] == undefined) {
+            return undefined;
+          } else {
+            current = current[paths[i]];
+          }
+        }
+        return current;
+      },
+
+      actionListener: function (event) {
 
         function isArray(obj) {
           return Object.prototype.toString.call(obj) === "[object Array]";
@@ -45,20 +64,20 @@
         }
 
         var template = this.template;
-
+   
         if (isEmptyString(template)) {
           Polymer.dom(this.$.insertPoint).innerHTML = "";
           var jsonDiv = this.create('div');
           var jsonPre = this.create('pre');
           Polymer.dom(jsonDiv).appendChild(jsonPre);
-          var eventJson = JSON.stringify(event, null, " ");
+          var eventJson = JSON.stringify(this.modelRoot ? this._getObjPath(event.detail.model, this.modelRoot) : event, null, " ");
           var nowStr = moment().format("HH:mm:ss");
           jsonPre.textContent = nowStr + " : " + eventJson;
           Polymer.dom(this.$.insertPoint).appendChild(jsonDiv);
           return;
         }
-
-        var state = event.detail.model.state;
+                
+        var state = this.modelRoot ? this._getObjPath(event.detail.model, this.modelRoot) : event.detail.model.state;
 
         var matchedParts = template.match(/\{\{([\w]+)\}\}/gm);
         if (!matchedParts) {
@@ -67,17 +86,17 @@
 
         var insertPoint = this.$.insertPoint;
         Polymer.dom(insertPoint).innerHTML = "";
-        var div = document.createElement('div');
+        var divPrototype = document.createElement('div');
         var docFragment = document.createDocumentFragment();
-        var result = template;
 
         matchedParts.forEach(function (matchedPart, index) {
-          var fieldName = matchedPart.substring((matchedPart.indexOf("{{")+2), matchedPart.indexOf("}}"));
-          result = result.split(matchedPart).join(state[fieldName]);
+          var fieldName = matchedPart.substring((matchedPart.indexOf("{{") + 2), matchedPart.indexOf("}}"));
+          var div = divPrototype.cloneNode(true);
+          var value = template.replace(matchedPart, state[fieldName]);
+          div.textContent = value;
+          Polymer.dom(docFragment).appendChild(div);
         });
-        
-        div.textContent = result;
-        Polymer.dom(docFragment).appendChild(div);    
+
         Polymer.dom(insertPoint).appendChild(docFragment);
       }
     });
