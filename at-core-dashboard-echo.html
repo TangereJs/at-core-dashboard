@@ -72,7 +72,7 @@
           Polymer.dom(jsonDiv).appendChild(jsonPre);
           var eventJson = JSON.stringify(this.modelRoot ? this._getObjPath(event.detail.model, this.modelRoot) : event, null, " ");
           var nowStr = moment().format("HH:mm:ss");
-          jsonPre.textContent = nowStr + " : " + eventJson;
+          jsonPre.textContent = nowStr + " " + this.modelRoot + ": " + eventJson;
           Polymer.dom(this.$.insertPoint).appendChild(jsonDiv);
           return;
         }
