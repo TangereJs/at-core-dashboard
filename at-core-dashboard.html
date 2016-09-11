@@ -1,12 +1,7 @@
 <link rel="import" href="../tangere/tangere.html">
 <link rel="import" href="../at-core-resize-sensor/at-core-resize-sensor.html">
 <link rel="import" href="../at-theme/at-theme.html">
-<link rel="import" href="../at-form-text/at-form-text.html">
-<link rel="import" href="../at-form-date/at-form-date.html">
-<link rel="import" href="../at-form-daterange/at-form-daterange.html">
-<link rel="import" href="../at-chart-core/at-chart-core.html">
-<link rel="import" href="../at-chart-strudel/at-chart-strudel.html">
-<link rel="import" href="../at-silver-transform/at-silver-transform.html">
+<link rel="import" href="../at-elements/at-dashboard-elements.html" >
 <link rel="import" href="at-core-dashboard-echo.html">
 <link rel="import" href="../at-core-schema/at-core-schema.html">
 
@@ -21,6 +16,18 @@
 
       :host(:focus) {
         outline: none;
+      }
+
+      [class*='col-'] {
+        padding-left: 0;
+        padding-right: 0;      
+        min-height: inherit;
+      }
+
+      at-form-text {
+        padding-left: 15px;
+        padding-right: 15px;       
+        min-height: 76px;
       }
 
       #insertPoint {
@@ -511,7 +518,7 @@
         }
 
         // ignore properties without listeners
-        if (actionListeners.length == 0) continue;
+        if (!propDef.actionListeners || actionListeners.length == 0) continue;
 
         for (var j = 0; j < actionListeners.length; j++) {
 
