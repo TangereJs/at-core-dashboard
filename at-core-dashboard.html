@@ -181,6 +181,7 @@
         }
       });
     },
+
     attached: function () {
       var resizeSensor = this.$.resizeSensor;
       var coreForm = this;
@@ -193,14 +194,16 @@
         coreForm.updateLayout(newWidth);
       });
     },
+
     updateLayout: function (newWidth, oldWidth) {
-      // 377 is from fibonacci sequence; it should do just fine
+    
       if (newWidth < 600) {
         this.layout = "vertical";
       } else {
         this.layout = "horizontal";
       }
     },
+
     hideChanged: function (newValue, oldValue) {
       var self = this;
       var insertPoint = this.$.insertPoint;
@@ -217,9 +220,7 @@
         });
       }
     },
-    // ------------------------------
-    // *ij* maybe one day when we have HTML7 and resize event for elements this function will not be necessary
-    // this function is here to solve the problem in at-form-designer
+
     // when user switches to field settings tab, resize sensor is incorrectly initialized
     // so this function needs to be called to reinitialize the sensor
     resetResizeSensor: function () {
@@ -229,7 +230,7 @@
       var currWidth = resizeSensor.queryWidth();
       coreForm.updateLayout(currWidth);
     },
-    // ------------------------------
+        
     schemaChanged: function (newValue, oldValue) {
       if (this._isReady) {
         var self = this;
@@ -358,6 +359,14 @@
 
             // handle default value
             defaultValue = propertyDefinition.default;
+                        
+            
+            // register variable in router and get value if exsting in state
+            if (!!formElement.$meta && !(formElement.$meta[0].invisible === true)) {
+              var ev = { name: propertyName, defaultValue: defaultValue, element: formElement };
+              Polymer.signal("register-state-var", ev);
+              if (ev.value !== undefined) defaultValue = ev.value;
+            }
 
             // if default value is not null or undefined and regular value is null or undefined
             // loading initial value will trigger value-changed event to update .data if defaultValue is valid
@@ -389,6 +398,15 @@
       resizeSensor.reset();
       var width = resizeSensor.queryWidth();
       this.updateLayout(width);
+
+      this.addEventListener('keypress', function (event) {
+        
+        // validate() will trigger change event(s) if needed
+        if (event.keyCode == 13) {
+          this.validate();         
+        }
+
+      });
 
     },
 
@@ -570,6 +588,12 @@
         property: property,
         value: this.data
       });
+
+      if (!!changedElement.$meta && !(changedElement.$meta[0].invisible === true)) {        
+        var ev = { name: property, value: value };
+        Polymer.signal("update-state-var", ev);
+      }
+      
     },
 
     _createEventObject: function (type, srcName, srcElement, value, data) {
