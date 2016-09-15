@@ -1,7 +1,7 @@
 <link rel="import" href="../tangere/tangere.html">
 <link rel="import" href="../at-core-resize-sensor/at-core-resize-sensor.html">
 <link rel="import" href="../at-theme/at-theme.html">
-<link rel="import" href="../at-elements/at-dashboard-elements.html" >
+<link rel="import" href="../at-elements/at-dashboard-elements.html">
 <link rel="import" href="at-core-dashboard-echo.html">
 <link rel="import" href="../at-core-schema/at-core-schema.html">
 
@@ -20,13 +20,13 @@
 
       [class*='col-'] {
         padding-left: 0;
-        padding-right: 0;      
+        padding-right: 0;
         min-height: inherit;
       }
 
       at-form-text {
         padding-left: 15px;
-        padding-right: 15px;       
+        padding-right: 15px;
         min-height: 76px;
       }
 
@@ -196,7 +196,7 @@
     },
 
     updateLayout: function (newWidth, oldWidth) {
-    
+
       if (newWidth < 600) {
         this.layout = "vertical";
       } else {
@@ -230,7 +230,7 @@
       var currWidth = resizeSensor.queryWidth();
       coreForm.updateLayout(currWidth);
     },
-        
+
     schemaChanged: function (newValue, oldValue) {
       if (this._isReady) {
         var self = this;
@@ -312,14 +312,34 @@
                 // at-form-section doesn't have clearUIValidState function nor does it need one
                 formElement.clearUIValidState();
               }
+              
+              // setup changed listener for .value property to update data and call listeners
+              if (formElement.value !== undefined) {
+                formElement.addEventListener('value-changed', function (event) {                  
+                  // get dom node of changed element
+                  var changedElement = self.getElement(event.target.id);
+                  self._updateDataObject(event.target.id, changedElement, event.detail.value);
+                });
+              }
 
-              formElement.addEventListener('value-changed', function (event) {
+              // setup changed listeners for stateProperties
+              if (!!formElement.$meta && formElement.$meta[0].stateProperties !== undefined) {
+                for (var i = 0; i < formElement.$meta[0].stateProperties.length; i++) {
+                  var statePropertyName = formElement.$meta[0].stateProperties[i];
 
-                // get dom node of changed element
-                var changedElement = self.getElement(event.target.id);
-                self._updateDataObject(event.target.id, changedElement, event.detail.value);
-              });
+                  if (statePropertyName !== "value") {  // value is already handled in _updateDataObject
 
+                    formElement.addEventListener(Polymer.CaseMap.camelToDashCase(statePropertyName) + '-changed', function (event) {
+                      var elName = event.target.id;
+                      var propName = event.type.replace("-changed", "");
+                      propName = Polymer.CaseMap.dashToCamelCase(propName);
+                      var ev = { name: elName + "." + propName, value: event.detail.value };
+                      Polymer.signal("update-state-var", ev);
+                    });
+
+                  }
+                }
+              }
 
               if (formElement.valid !== undefined) {
                 self.elementsToValidate.push(formElement);
@@ -359,14 +379,26 @@
 
             // handle default value
             defaultValue = propertyDefinition.default;
-                        
-            
-            // register variable in router and get value if exsting in state
-            if (!!formElement.$meta && !(formElement.$meta[0].invisible === true)) {
+
+
+            // register .value variable in router and get value if exsting in state
+            if (!!formElement.$meta && !(formElement.$meta[0].invisible === true) && formElement.$meta[0].stateProperties === undefined) {
               var ev = { name: propertyName, defaultValue: defaultValue, element: formElement };
               Polymer.signal("register-state-var", ev);
               if (ev.value !== undefined) defaultValue = ev.value;
             }
+
+            // setup changed listeners for stateProperties
+            if (!!formElement.$meta && formElement.$meta[0].stateProperties !== undefined) {
+              for (var i = 0; i < formElement.$meta[0].stateProperties.length; i++) {
+                var propName = formElement.$meta[0].stateProperties[i];                
+                var elName = formElement.id;               
+                var ev = { name: elName + "." + propName, defaultValue: formElement[propName], element: formElement };
+                Polymer.signal("register-state-var", ev);
+                if (ev.value !== undefined) formElement[propName] = ev.value;
+              }
+            }
+
 
             // if default value is not null or undefined and regular value is null or undefined
             // loading initial value will trigger value-changed event to update .data if defaultValue is valid
@@ -400,10 +432,10 @@
       this.updateLayout(width);
 
       this.addEventListener('keypress', function (event) {
-        
+
         // validate() will trigger change event(s) if needed
         if (event.keyCode == 13) {
-          this.validate();         
+          this.validate();
         }
 
       });
@@ -546,10 +578,10 @@
             // convert object { value: name} to "name"
             listenerName = listenerName.value;
           }
-
+      
           // skip if element is not listening for current event
           // *todo* decide if eventtype for element name is  'name' (designer)   or  'name-changed'  (which seems more logical)
-          if (listenerName != event.type && listenerName + "-changed" != event.type) {
+          if (listenerName != "_all" && listenerName != event.type && listenerName + "-changed" != event.type) {
             continue;
           }
 
@@ -576,10 +608,6 @@
 
       this.data[property] = value;
 
-      /* ma
-      this._calculateFormValidState();
-      */
-
       var event = this._createEventObject(property + "-changed", property, changedElement, value, this.data);
 
       this._invokeActionListeners(event);
@@ -589,11 +617,11 @@
         value: this.data
       });
 
-      if (!!changedElement.$meta && !(changedElement.$meta[0].invisible === true)) {        
+      if (!!changedElement.$meta && !(changedElement.$meta[0].invisible === true)) {
         var ev = { name: property, value: value };
         Polymer.signal("update-state-var", ev);
       }
-      
+
     },
 
     _createEventObject: function (type, srcName, srcElement, value, data) {

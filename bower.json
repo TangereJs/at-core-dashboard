@@ -1,6 +1,6 @@
 {
   "name": "at-core-dashboard",
-  "version": "0.0.1.109",
+  "version": "0.0.1.139",
   "private": true,
   "dependencies": {
     "polymer": "Polymer/polymer#master",
