@@ -1,0 +1,130 @@
+<link rel="import" href="../tangere/tangere.html">
+<link rel="import" href="../at-core-activity/at-core-activity.html">
+<link rel="import" href="../at-core-spinner/at-core-spinner.html">
+<link rel="import" href="../at-core-signals/at-core-signals.html">
+<link rel="import" href="../at-core-card/at-core-card.html">
+<link rel="import" href="../at-core-dashboard/at-core-dashboard.html">
+
+<link rel="import" href="../toaster-helpdesk/toaster-helpdesk-card.html">
+
+<dom-module id="at-core-dashboard-card-preview">
+  <template>
+
+    <style>
+      :host {
+        position: relative;
+        width: 100%;
+        display: block;
+      }
+
+      #container {
+        width: 100%;
+        max-width: 400px;
+        margin: 0 auto;
+      }
+    </style>
+
+    <at-core-spinner id="spinner" type="wave" display="none"></at-core-spinner>
+    <at-core-activity id="metadata" on-response="_metadataResponse" on-discard="handleRequestDiscard" on-error="handleRequestError"></at-core-activity>
+    <at-core-activity id="data" on-response="_dataResponse" on-discard="handleRequestDiscard" on-error="handleRequestError"></at-core-activity>
+
+    <div id="container"></div>
+
+    </div>
+  </template>
+</dom-module>
+
+<script>
+
+  Polymer({
+    is: "at-core-dashboard-card-preview",
+    properties: {
+      cardId: {
+        type: String,
+        value: ""
+      },
+      schema: {
+        type: Object
+      }
+    },
+
+    observers: [
+     '_initialize(cardId, schema)'
+    ],
+
+    _initialize: function () {
+
+      if (!this.schema) return;
+
+      this._results = 0;
+      this.$.spinner.display = "block";
+      Polymer.signal("busy-start");
+
+      this.$.metadata.url = "/api/adenin.GateKeeper.Content/Item/"+ this.cardId;
+      this.$.metadata.generateRequest();
+
+      this.$.data.url = "/api/adenin.Now.Service/Proxy/" + this.cardId;
+      this.$.data.generateRequest();
+
+    },
+
+    _metadataResponse: function (e) {
+      this._results += 1;      
+      if (this._results == 2) this._showPreview();
+    },
+
+    _dataResponse: function (e) {
+      this._results += 1;      
+      if (this._results == 2) this._showPreview();
+    },
+
+    _showPreview: function () {
+     
+      var meta = this.$.metadata.lastResponse;
+      var model = this.$.data.lastResponse;
+
+      var cardData = {};
+      cardData.Id = meta.id;
+      cardData.Title = meta.title;
+      
+      if (meta.AppPart) {
+        cardData.Icon = meta.AppPart.Icon;
+        cardData.IconColor = meta.AppPart.Category;
+        cardData.AppUrl = meta.AppPart.Url;
+      }
+
+      model._card = cardData;  // provide card metadata in _card
+
+      var cardEl = document.createElement("toaster-helpdesk-card");
+      
+      cardEl.model = model;
+
+      var newCardWrapper = document.createElement("at-core-card");      
+
+      newCardWrapper.appendChild(cardEl);
+
+      Polymer.dom(this.$.container).innerHTML = "";
+      Polymer.dom(this.$.container).appendChild(newCardWrapper);
+
+      this.$.spinner.display = "none";
+      Polymer.signal("busy-end");
+    },
+
+    handleRequestDiscard: function () {      
+      this._results = -1;
+      this.$.spinner.display = "none";
+      Polymer.signal("busy-end");
+    },
+
+    handleRequestError: function () {      
+      this._results = -1;
+      this.$.spinner.display = "none";
+      Polymer.signal("busy-end");
+    },
+
+
+    ready: function () {
+
+    }
+  });
+</script>

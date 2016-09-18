@@ -4,6 +4,7 @@
 <link rel="import" href="../at-elements/at-dashboard-elements.html">
 <link rel="import" href="at-core-dashboard-echo.html">
 <link rel="import" href="../at-core-schema/at-core-schema.html">
+<link rel="import" href="../at-i18n/at-i18n-behavior.html">
 
 <dom-module id="at-core-dashboard">
   <template>
@@ -78,6 +79,7 @@
   'use strict';
   Polymer({
     is: 'at-core-dashboard',
+    behaviors: [Tangere.behavior.handleLink, Tangere.behaviors.i18n],
     hostAttributes: {
       tabindex: 0
     },
@@ -156,6 +158,12 @@
       }
 
     },
+    get model() {
+      return this.data.model;
+    },
+    set model(newValue) {
+      this.data.model = newValue;
+    },
     set valid(newValue) { },
     ready: function () {
       this.elementsToValidate = [];
@@ -172,7 +180,7 @@
         var propertyDefinitions = self.schema.properties;
         var propertyNames = propertyDefinitions ? Object.keys(propertyDefinitions) : [];
         if (propertyDefinitions && propertyNames.length > 0) {
-          // focus frist element
+          // focus first element
           var propertyName = propertyNames[0];
           var element = self.getElement(propertyName);
           if (element.focus) {
@@ -232,6 +240,7 @@
     },
 
     schemaChanged: function (newValue, oldValue) {
+
       if (this._isReady) {
         var self = this;
         var schemaHelpers = window.schemaHelpers;
@@ -440,6 +449,10 @@
 
       });
 
+      // send _start event
+      var event = this._createEventObject("_start", null, null, null, this.data);
+      this._invokeActionListeners(event);
+
     },
 
     /* *ij*
@@ -597,9 +610,6 @@
      * value is the new value to be set
      */
     _updateDataObject: function (property, changedElement, value) {
-      function isObject(obj) {
-        return Object.prototype.toString.call(obj) === "[object Object]";
-      }
 
       // if an element has an .valid flag then the change is ignored when element value is not valid
       if (changedElement.valid !== undefined && !changedElement.valid) {
