@@ -1,0 +1,93 @@
+
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title></title>
+  <script src="../webcomponentsjs/webcomponents-lite.js" charset="utf-8"></script>
+  <link rel="import" href="at-core-card-preview.html">
+
+</head>
+
+<body>
+  <at-core-card-preview id="dashboard" card-id="78"></at-core-card-preview>
+
+  <script>
+    document.addEventListener('WebComponentsReady', function(event) {
+      window.schemaHelpers.initializeCentralArrayOfComponents();
+      var dashboard = document.getElementById('dashboard');
+
+      dashboard.schema = {
+        "properties": {
+          "input1": {
+            "type": "string",
+            "hideLabel": false,
+            "required": true,
+            "disabled": false,
+            "placeholder": "",
+            "maxChars": 0,
+            "hide": false,
+            "valid": true,
+            "errorMessage": "",
+            "hint": "",
+            "title": "Text 1",
+            "default": "",
+            "actionListeners": []
+          },
+          "input2": {
+            "type": "string",
+            "hideLabel": false,
+            "required": false,
+            "disabled": false,
+            "placeholder": "",
+            "maxChars": 0,
+            "hide": false,
+            "valid": true,
+            "errorMessage": "",
+            "hint": "",
+            "title": "Text 2",
+            "default": "b2",
+            "actionListeners": []
+          },
+          "at-core-dashboard-echo4": {
+            "type": "element",
+            "xtype": "at-core-dashboard-echo",
+            "template": "field1={{input1}}",
+            "actionListeners": [{
+              "value": "input1"
+            }]
+          },
+          "at-core-dashboard-echo5": {
+            "type": "element",
+            "xtype": "at-core-dashboard-echo",
+            "template": "field2={{input2}}",
+            "actionListeners": ["input2"]
+          },
+          "at-core-dashboard-echo6": {
+            "type": "element",
+            "xtype": "at-core-dashboard-echo",
+            "template": "field1={{input1}}, field2={{input2}}",
+            "actionListeners": [{
+              "value": "input1"
+            }, {
+              "value": "input2"
+            }]
+          },
+          "at-core-dashboard-echo7": {
+            "type": "element",
+            "xtype": "at-core-dashboard-echo",
+            "template": "",
+            "actionListeners": [{
+              "value": "input1"
+            }, {
+              "value": "input2"
+            }]
+          }
+        }
+      };
+
+    });
+  </script>
+</body>
+
+</html>
