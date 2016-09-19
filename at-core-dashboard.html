@@ -324,10 +324,10 @@
                 // at-form-section doesn't have clearUIValidState function nor does it need one
                 formElement.clearUIValidState();
               }
-              
+
               // setup changed listener for .value property to update data and call listeners
               if (formElement.value !== undefined) {
-                formElement.addEventListener('value-changed', function (event) {                  
+                formElement.addEventListener('value-changed', function (event) {
                   // get dom node of changed element
                   var changedElement = self.getElement(event.target.id);
                   self._updateDataObject(event.target.id, changedElement, event.detail.value);
@@ -403,8 +403,8 @@
             // setup changed listeners for stateProperties
             if (!!formElement.$meta && formElement.$meta[0].stateProperties !== undefined) {
               for (var i = 0; i < formElement.$meta[0].stateProperties.length; i++) {
-                var propName = formElement.$meta[0].stateProperties[i];                
-                var elName = formElement.id;               
+                var propName = formElement.$meta[0].stateProperties[i];
+                var elName = formElement.id;
                 var ev = { name: elName + "." + propName, defaultValue: formElement[propName], element: formElement };
                 Polymer.signal("register-state-var", ev);
                 if (ev.value !== undefined) formElement[propName] = ev.value;
@@ -594,14 +594,16 @@
             // convert object { value: name} to "name"
             listenerName = listenerName.value;
           }
-      
+
           // skip if element is not listening for current event
           // *todo* decide if eventtype for element name is  'name' (designer)   or  'name-changed'  (which seems more logical)
           if (listenerName != "_all" && listenerName != event.type && listenerName + "-changed" != event.type) {
             continue;
           }
 
-          element.actionListener(event);
+          if (isFunction(element.actionListener)) {
+            element.actionListener(event);
+          }
 
         }
       }
