@@ -324,11 +324,11 @@
                 // at-form-section doesn't have clearUIValidState function nor does it need one
                 formElement.clearUIValidState();
               }
-
+             
               // setup changed listener for .value property to update data and call listeners
-              if (formElement.value !== undefined) {
+              if (formElement.properties["value"] != undefined) {
                 formElement.addEventListener('value-changed', function (event) {
-                  // get dom node of changed element
+                  // get dom node of changed element                
                   var changedElement = self.getElement(event.target.id);
                   self._updateDataObject(event.target.id, changedElement, event.detail.value);
                 });
