@@ -27,6 +27,7 @@
       [class*='col-'] {
         padding-left: 0;
         padding-right: 0;
+        display: block;
         min-height: inherit;
       }
 
@@ -111,7 +112,7 @@
       data: {
         type: Object,
         value: function () {
-          return {};
+          return { session: Tangere.session};
         },
         observer: 'dataChanged'
       },
@@ -188,7 +189,7 @@
           // focus first element
           var propertyName = propertyNames[0];
           var element = self.getElement(propertyName);
-          if (element.focus) {
+          if (element && element.focus) {
             element.focus();
           }
         }
@@ -596,7 +597,7 @@
             // convert object { value: name} to "name"
             listenerName = listenerName.value;
           }
-
+       
           // skip if element is not listening for current event
           // *todo* decide if eventtype for element name is  'name' (designer)   or  'name-changed'  (which seems more logical)
           if (listenerName != "_all" && listenerName != event.type && listenerName + "-changed" != event.type) {
