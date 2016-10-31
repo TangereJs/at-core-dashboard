@@ -144,7 +144,7 @@
         value: true,
         readOnly: true
       },
-      proxyName: {
+      namePrefix: {
         type: String,
         notify: true,
         value: ""
@@ -169,13 +169,28 @@
       }
 
     },
+
     get model() {
       return this.data.model;
     },
+
     set model(newValue) {
       this.data.model = newValue;
     },
+
     set valid(newValue) { },
+
+    listeners: {
+      'resolve-name-prefix': 'resolveNamePrefix'
+    },
+
+    resolveNamePrefix: function (e) {
+      // allow nested elements (e.g. at-link) to retrieve the namePrefix of the "next" container
+      e.detail.namePrefix = this.namePrefix;
+      e.preventDefault();
+    },
+
+
     ready: function () {
       this.elementsToValidate = [];
       this._isReady = true;
