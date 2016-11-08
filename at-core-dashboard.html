@@ -316,19 +316,7 @@
         time: "at-form-date",
         datetime: "at-form-date",
         daterange: "at-form-daterange",
-        string: "at-form-text",
-        'at-chart-core': 'at-chart-core',
-        'at-chart-strudel': 'at-chart-strudel',
-        'at-silver-cards': 'at-silver-cards',
-        'at-silver-datasource': 'at-silver-datasource',
-        'at-silver-list': 'at-silver-list',
-        'at-silver-script': 'at-silver-script',
-        'at-silver-transform': 'at-silver-transform',
-        'at-core-list': 'at-core-list',
-        'at-core-view': 'at-core-view',
-        'at-core-dashboard-echo': 'at-core-dashboard-echo',
-        'nvd3-line': 'nvd3-line',
-        'nvd3-pie': 'nvd3-pie'
+        string: "at-form-text"
       };
 
       if (nonImportedElements.length) {
@@ -341,7 +329,8 @@
 
           var displayType = propDef.displayType;
           var elementName = displayTypeToFormElementMapping[displayType];
-
+          elementName = !elementName ? displayType : elementName;
+          
           // construct elemHref
           var compUrl = document.baseURI.indexOf("/components/") >= 0 ? "/components/" : "components/";
 
