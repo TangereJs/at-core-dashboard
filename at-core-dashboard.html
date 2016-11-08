@@ -1,13 +1,12 @@
 <link rel="import" href="../tangere/tangere.html">
 <link rel="import" href="../at-core-resize-sensor/at-core-resize-sensor.html">
 <link rel="import" href="../at-theme/at-theme.html">
-<link rel="import" href="../at-elements/at-dashboard-elements.html">
 <link rel="import" href="../at-core-style-classes/at-core-style-classes.html">
 <link rel="import" href="at-core-dashboard-echo.html">
 <link rel="import" href="../at-core-schema/at-core-schema.html">
 <link rel="import" href="../at-i18n/at-i18n-behavior.html">
 <link rel="import" href="../at-now/now-card-styles.html">
-
+<link rel="import" href="../at-core-signals/at-core-signals.html">
 
 <dom-module id="at-core-dashboard">
   <template>
@@ -194,26 +193,6 @@
     ready: function () {
       this.elementsToValidate = [];
       this._isReady = true;
-
-      var self = this;
-      this.addEventListener('focus', function (event) {
-        if (event.currentTarget.is !== "at-core-dashboard") {
-          return;
-        }
-        if (!event.target.is) {
-          return;
-        }
-        var propertyDefinitions = self.schema.properties;
-        var propertyNames = propertyDefinitions ? Object.keys(propertyDefinitions) : [];
-        if (propertyDefinitions && propertyNames.length > 0) {
-          // focus first element
-          var propertyName = propertyNames[0];
-          var element = self.getElement(propertyName);
-          if (element && element.focus) {
-            element.focus();
-          }
-        }
-      });
     },
 
     attached: function () {
@@ -238,13 +217,39 @@
       }
     },
 
+    /**
+     * Focuses the element on the form with given elementId
+     * If elementId is provided and element with provided elementId exists, its focused.
+     * If elementId is not provided first element on the form is focused
+     */
+    setFocus: function (elementId) {
+      var _sh = window.schemaHelpers;
+      if (!_sh.isObject(this.schema) || !_sh.isObject(this.schema.properties)) {
+        return;
+      }
+
+      var element;
+      if (_sh.isString(elementId) && elementId !== "") {
+        element = this.getElement(elementId);
+      } else {
+        // focus first element on the form
+        var propertyNames = Object.getOwnPropertyNames(this.schema.properties);
+        var firstElementName = propertyNames[0];
+        element = this.getElement(firstElementName);
+      }
+
+      if (element !== null && _sh.isFunction(element.focus)) {
+        element.focus();
+      }
+    },
+
     hideChanged: function (newValue, oldValue) {
       var self = this;
       var insertPoint = this.$.insertPoint;
 
       if (this.schema && this.schema.properties) {
         var properties = this.schema.properties;
-        var propNames = Object.keys(properties);
+        var propNames = Object.getOwnPropertyNames(properties);
         propNames.forEach(function (propName, index) {
           var formElement = Polymer.dom(insertPoint).querySelector('#' + propName);
           if (formElement) {
@@ -265,7 +270,107 @@
       coreForm.updateLayout(currWidth);
     },
 
+
     schemaChanged: function (newValue, oldValue) {
+      var schemaHelpers = window.schemaHelpers;
+
+      if (schemaHelpers.isString(newValue)) {
+        /*
+        if newValue for schema is given as json string, parse it and assign it to this.schema
+        if newValue is a valid json string this.schema will trigger _schemaChanged again so we return to prevent schema changes being applied twice
+        if newValue is an invalid json string just return. Whatever the previous schema was that remains visible to the user
+        */
+        try {
+          newValue = JSON.parse(newValue);
+          this.schema = newValue;
+        } catch (e) {
+          console.log(e);
+        }
+        return;
+      }
+
+      if (!schemaHelpers.isObject(newValue) || !schemaHelpers.isObject(newValue.properties)) {
+        return;
+      }
+
+      // figure out the list of the elements that should be imported
+      schemaHelpers.initializeCentralArrayOfComponents();
+      var _properties = newValue.properties;
+      var _propertyNames = Object.getOwnPropertyNames(newValue.properties);
+      var nonImportedElements = [];
+
+      _propertyNames.forEach(function (propName, index) {
+        var propDef = _properties[propName];
+        var displayType = schemaHelpers.getDisplayType(propDef, []);
+        var mapping = schemaHelpers.findMapping(displayType);
+
+        if (!mapping) {
+          // element is not loaded; scheadule it for importHref
+          propDef.displayType = displayType;
+          nonImportedElements.push(propDef);
+        }
+      });
+
+      var displayTypeToFormElementMapping = {
+        date: "at-form-date",
+        time: "at-form-date",
+        datetime: "at-form-date",
+        daterange: "at-form-daterange",
+        string: "at-form-text",
+        'at-chart-core': 'at-chart-core',
+        'at-chart-strudel': 'at-chart-strudel',
+        'at-silver-cards': 'at-silver-cards',
+        'at-silver-datasource': 'at-silver-datasource',
+        'at-silver-list': 'at-silver-list',
+        'at-silver-script': 'at-silver-script',
+        'at-silver-transform': 'at-silver-transform',
+        'at-core-list': 'at-core-list',
+        'at-core-view': 'at-core-view',
+        'at-core-dashboard-echo': 'at-core-dashboard-echo',
+        'nvd3-line': 'nvd3-line',
+        'nvd3-pie': 'nvd3-pie'
+      };
+
+      if (nonImportedElements.length) {
+        var pendingImportsCount = nonImportedElements.length;
+
+        nonImportedElements.forEach(function (propDef, index) {
+          // To construct elemHref we need static information about what (type, xtype) maps to which at-form element
+          // Right now, only $meta in each element contains this information and central array of components is populated with $meta information
+          // So, to dynamically importHref needed elements we need to introduce static information (which will just be a copy paste from $meta of each element)
+
+          var displayType = propDef.displayType;
+          var elementName = displayTypeToFormElementMapping[displayType];
+
+          // construct elemHref
+          var compUrl = document.baseURI.indexOf("/components/") >= 0 ? "/components/" : "components/";
+
+          if (document.URL.indexOf("/elements/designer-element/") >= 0) {
+            compUrl = "/components/";
+          }
+
+          if (window.ComponentsBase != undefined) {
+            compUrl = window.ComponentsBase;
+          }
+          var elemHref = compUrl + elementName + "/" + elementName + ".html";
+
+          self.importHref(elemHref, function(e) {
+            // import was successful
+            pendingImportsCount -= 1;
+            if (!pendingImportsCount) {
+              self._renderSchema(newValue);
+            }
+          }, function (e) {
+            // import failed
+            console.log("import failed: " + e.target.href);
+          });
+        });
+      } else {
+        this._renderSchema(newValue);
+      }
+    },
+
+    _renderSchema: function (newValue, oldValue) {
 
       if (this._isReady) {
         var self = this;
@@ -308,10 +413,10 @@
         var displayType;
 
         if (propertyDefinitions) {
-          propertyNames = Object.keys(propertyDefinitions);
+          propertyNames = Object.getOwnPropertyNames(propertyDefinitions);
 
           // initialize data with defaults when empty
-          if (Object.keys(self.data).length == 0) {
+          if (Object.getOwnPropertyNames(self.data).length == 0) {
             self.data = this._calculateInitialDataFromSchemaProperties(propertyDefinitions);
           }
 
@@ -347,11 +452,11 @@
                 // at-form-section doesn't have clearUIValidState function nor does it need one
                 formElement.clearUIValidState();
               }
-             
+
               // setup changed listener for .value property to update data and call listeners
               if (formElement.properties["value"] != undefined) {
                 formElement.addEventListener('value-changed', function (event) {
-                  // get dom node of changed element                
+                  // get dom node of changed element
                   var changedElement = self.getElement(event.target.id);
                   self._updateDataObject(event.target.id, changedElement, event.detail.value);
                 });
@@ -475,6 +580,8 @@
 
       });
 
+      this.setFocus();
+
       // send _start event
       var event = this._createEventObject("_start", null, null, null, this.data);
       this._invokeActionListeners(event);
@@ -553,7 +660,7 @@
       }
 
       if (schemaHelpers.isObject(oldValue)) {
-        Object.keys(initialData).forEach(function (propertyName) {
+        Object.getOwnPropertyNames(initialData).forEach(function (propertyName) {
           if (!newValue.hasOwnProperty(propertyName)) {
             newValue[propertyName] = initialData[propertyName];
           }
@@ -562,7 +669,7 @@
 
       var self = this;
       if (schemaHelpers.isObject(newValue)) {
-        Object.keys(newValue).forEach(function (propertyName) {
+        Object.getOwnPropertyNames(newValue).forEach(function (propertyName) {
           fieldElement = self.getElement(propertyName);
           if (schemaHelpers.valueNotReadOnly(fieldElement)) {
             fieldElement.value = newValue[propertyName];
@@ -581,7 +688,7 @@
     _invokeActionListeners: function (event) {
 
       var properties = this.schema.properties;
-      var propertyNames = Object.keys(properties);
+      var propertyNames = Object.getOwnPropertyNames(properties);
 
       // check each element in the schema if it's listing for event.name
       for (var i = 0; i < propertyNames.length; i++) {
@@ -617,7 +724,7 @@
             // convert object { value: name} to "name"
             listenerName = listenerName.value;
           }
-       
+
           // skip if element is not listening for current event
           // *todo* decide if eventtype for element name is  'name' (designer)   or  'name-changed'  (which seems more logical)
           if (listenerName != "_all" && listenerName != event.type && listenerName + "-changed" != event.type) {
@@ -715,7 +822,7 @@
       var fieldElement;
       var properties = this.schema.properties;
 
-      Object.keys(properties).forEach(function (propertyName) {
+      Object.getOwnPropertyNames(properties).forEach(function (propertyName) {
         fieldElement = Polymer.dom(fieldsContainer).querySelector('#' + propertyName);
         if (fieldElement) {
           if (newValue) {
@@ -764,7 +871,7 @@
     _calculateInitialDataFromSchemaProperties: function (properties) {
 
       var result = {};
-      var propertyNames = Object.keys(properties);
+      var propertyNames = Object.getOwnPropertyNames(properties);
       var propSchemaDef;
       var calculatedValue;
 
