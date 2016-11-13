@@ -273,6 +273,9 @@
 
     schemaChanged: function (newValue, oldValue) {
       var schemaHelpers = window.schemaHelpers;
+      var self = this;
+
+      // debugger;
 
       if (schemaHelpers.isString(newValue)) {
         /*
@@ -543,7 +546,7 @@
 
           });
 
-          self.fire('at-core-dashboard-rendered');
+          self.fire('rendered', this, { bubbles: false });
         } else {
           //TODO Implement clear of data property
         }
