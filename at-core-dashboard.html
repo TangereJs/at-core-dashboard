@@ -7,6 +7,9 @@
 <link rel="import" href="../at-i18n/at-i18n-behavior.html">
 <link rel="import" href="../at-now/now-card-styles.html">
 <link rel="import" href="../at-core-signals/at-core-signals.html">
+<link rel="import" href="../at-carbon-tabs/at-carbon-tab.html">
+<link rel="import" href="../at-carbon-tabs/at-carbon-tabs.html">
+<link rel="import" href="../iron-pages/iron-pages.html">
 
 <dom-module id="at-core-dashboard">
   <template>
@@ -105,8 +108,7 @@
             properties: {}
           };
           return result;
-        },
-        observer: 'schemaChanged'
+        }
       },
       data: {
         type: Object,
@@ -165,8 +167,46 @@
         observer: 'layoutChanged',
         xtype: "enum",
         xvaluelist: "horizontal,vertical"
-      }
+      },
 
+      /**
+      * at-core-form tabMode governs the rendering of at-form-section <br/>
+      * tabMode === default, renders at-form-section as a heading
+      * tabMode === tab, renders at-form-section as a tab
+      * all form-section elements form a tab group
+      * iron-pages hold the elements belonging to a tab group
+      * clicking a tab changes elements currently visible on screen
+      *
+      * @property tabMode
+      * @type string
+      * @default default
+      */
+      tabMode: {
+        type: String,
+        value: 'default',
+        xtype: "enum",
+        xvaluelist: [{
+          title: "Default",
+          value: "default"
+        }, {
+          title: "Tab Layout",
+          value: "tab"
+        }]
+      },
+
+      /**
+       * holds the value of the currently active tab when tabMode === tab <br/>
+       * has value of "" when tabMode === default
+       *
+       * @property activeTab
+       * @type string
+       * @default ""
+       */
+      activeTab: {
+        type: String,
+        value: "",
+        observer: '_activeTabChanged'
+      }
     },
 
     get model() {
@@ -179,6 +219,10 @@
 
     set valid(newValue) { },
 
+    observers: [
+      '_schemaChanged(schema, tabMode)'
+    ],
+
     listeners: {
       'resolve-name-prefix': 'resolveNamePrefix'
     },
@@ -189,9 +233,8 @@
       e.preventDefault();
     },
 
-
     ready: function () {
-      this.elementsToValidate = [];
+      this._activeTabChanged(this.activeTab, "called from ready");
       this._isReady = true;
     },
 
@@ -270,8 +313,7 @@
       coreForm.updateLayout(currWidth);
     },
 
-
-    schemaChanged: function (newValue, oldValue) {
+    _schemaChanged: function (newValue, tabMode) {
       var schemaHelpers = window.schemaHelpers;
       var self = this;
 
@@ -280,7 +322,7 @@
       if (schemaHelpers.isString(newValue)) {
         /*
         if newValue for schema is given as json string, parse it and assign it to this.schema
-        if newValue is a valid json string this.schema will trigger _schemaChanged again so we return to prevent schema changes being applied twice
+        if newValue is a valid json string this.schema will trigger __schemaChanged again so we return to prevent schema changes being applied twice
         if newValue is an invalid json string just return. Whatever the previous schema was that remains visible to the user
         */
         try {
@@ -302,6 +344,11 @@
       var _propertyNames = Object.getOwnPropertyNames(newValue.properties);
       var nonImportedElements = [];
 
+      var nonGroupedElements;
+      var formGroups = [];
+      var currentGroupName = "";
+      var currentGroupElements = nonGroupedElements = [];
+
       _propertyNames.forEach(function (propName, index) {
         var propDef = _properties[propName];
         var displayType = schemaHelpers.getDisplayType(propDef, []);
@@ -312,6 +359,23 @@
           propDef.displayType = displayType;
           nonImportedElements.push(propDef);
         }
+
+        if (tabMode === "tab") {
+          if (displayType !== 'section') {
+            currentGroupElements.push({ name: propName, definition: propDef });
+          } else {
+            // open a new group
+            currentGroupName = propName;
+            currentGroupElements = [];
+            formGroups.push({
+              name: currentGroupName,
+              label: propDef.title || currentGroupName,
+              elements:  currentGroupElements
+            });
+          }
+        } else {
+          nonGroupedElements.push({ name: propName, definition: propDef });
+        }
       });
 
       var displayTypeToFormElementMapping = {
@@ -319,7 +383,8 @@
         time: "at-form-date",
         datetime: "at-form-date",
         daterange: "at-form-daterange",
-        string: "at-form-text"
+        string: "at-form-text",
+        section: "at-form-section"
       };
 
       if (nonImportedElements.length) {
@@ -333,7 +398,7 @@
           var displayType = propDef.displayType;
           var elementName = displayTypeToFormElementMapping[displayType];
           elementName = !elementName ? displayType : elementName;
-          
+
           // construct elemHref
           var compUrl = document.baseURI.indexOf("/components/") >= 0 ? "/components/" : "components/";
 
@@ -350,7 +415,7 @@
             // import was successful
             pendingImportsCount -= 1;
             if (!pendingImportsCount) {
-              self._renderSchema(newValue);
+              self._renderSchema(nonGroupedElements, formGroups);
             }
           }, function (e) {
             // import failed
@@ -358,205 +423,134 @@
           });
         });
       } else {
-        this._renderSchema(newValue);
+        this._renderSchema(nonGroupedElements, formGroups);
       }
     },
 
-    _renderSchema: function (newValue, oldValue) {
+    _renderSchema: function (nonGroupedElements, formGroups) {
 
-      if (this._isReady) {
-        var self = this;
-        var schemaHelpers = window.schemaHelpers;
-        if (schemaHelpers.isString(newValue)) {
-          try {
-            newValue = JSON.parse(newValue);
-            this.schema = newValue;
-            return;
-          } catch (e) {
-            console.log(e);
-          }
-        }
+      var self = this;
+      var schemaHelpers = window.schemaHelpers;
+      var divPrototype = document.createElement('div');
 
-        if (schemaHelpers.isString(self.data)) {
-          try {
-            var dataObj = JSON.parse(self.data);
-            self.data = dataObj;
-          } catch (e) {
-            console.log(e);
-          }
-        }
+      self.elementsToValidate = [];
 
+      var fieldsContainer = this.$.insertPoint;
+      // clear the previous html content in the container
+      Polymer.dom(fieldsContainer).innerHTML = '';
 
-        self.elementsToValidate = [];
-
-        var fieldsContainer = this.$.insertPoint;
-        // clear the previous html content in the container
-        Polymer.dom(fieldsContainer).innerHTML = '';
-
-        var propertyDefinitions = newValue.properties;
-        var propertyNames = [];
-        var propertyDefinition;
-        var defaultValue;
-        var value;
-        var xgridcols;
-        var gridColsCssName;
-        var fieldContainer;
-        var formElement;
-        var displayType;
-
-        if (propertyDefinitions) {
-          propertyNames = Object.getOwnPropertyNames(propertyDefinitions);
-
-          // initialize data with defaults when empty
-          if (Object.getOwnPropertyNames(self.data).length == 0) {
-            self.data = this._calculateInitialDataFromSchemaProperties(propertyDefinitions);
-          }
-
-          // add schema elements to DOM
-          propertyNames.forEach(function (propertyName) {
-
-            if (schemaHelpers.isPropertyNameValid(propertyName)) {
-              propertyDefinition = propertyDefinitions[propertyName];
-
-              displayType = schemaHelpers.getDisplayType(propertyDefinition, []);
-
-              // handle xgridcols
-              xgridcols = displayType === "section" ? 12 : 6;
-              if (schemaHelpers.notNullOrEmpty(propertyDefinition.xgridcols)) {
-                xgridcols = parseInt(propertyDefinition.xgridcols);
-              }
-
-              // create element for field
-              formElement = schemaHelpers.createElement(propertyName, displayType, propertyDefinition);
-              Polymer.dom(formElement).setAttribute('id', propertyName);
-
-              // create the field container
-              fieldContainer = document.createElement('div');
-              gridColsCssName = "col-" + xgridcols;
-              Polymer.dom(fieldContainer).classList.add(gridColsCssName);
-
-              // special container for at-form-toggle to allow smaller height in vertical mode
-              if (formElement.tagName.toLowerCase() == "at-form-checkbox") {
-                Polymer.dom(fieldContainer).classList.add("at-form-checkbox");
-              }
-
-              if (formElement.clearUIValidState !== undefined) {
-                // at-form-section doesn't have clearUIValidState function nor does it need one
-                formElement.clearUIValidState();
-              }
-
-              // setup changed listener for .value property to update data and call listeners
-              if (formElement.properties["value"] != undefined) {
-                formElement.addEventListener('value-changed', function (event) {
-                  // get dom node of changed element
-                  var changedElement = self.getElement(event.target.id);
-                  self._updateDataObject(event.target.id, changedElement, event.detail.value);
-                });
-              }
-
-              // setup changed listeners for stateProperties
-              if (!!formElement.$meta && formElement.$meta[0].stateProperties !== undefined) {
-                for (var i = 0; i < formElement.$meta[0].stateProperties.length; i++) {
-                  var statePropertyName = formElement.$meta[0].stateProperties[i];
-
-                  if (statePropertyName !== "value") {  // value is already handled in _updateDataObject
-
-                    formElement.addEventListener(Polymer.CaseMap.camelToDashCase(statePropertyName) + '-changed', function (event) {
-                      var elName = event.target.id;
-                      var propName = event.type.replace("-changed", "");
-                      propName = Polymer.CaseMap.dashToCamelCase(propName);
-                      var ev = { name: elName + "." + propName, value: event.detail.value };
-                      Polymer.signal("update-state-var", ev);
-                    });
-
-                  }
-                }
-              }
-
-              if (formElement.valid !== undefined) {
-                self.elementsToValidate.push(formElement);
-              }
-
-              // if at-core-dashboard is hidden, element should be hidden as well
-              if (self.hide) {
-                formElement.hide = true;
-              }
-
-              // append paper element to its container
-              Polymer.dom(fieldContainer).appendChild(formElement);
-
-              if (formElement.hide) {
-                Polymer.dom(fieldContainer).classList.add('hidden');
-              }
-
-              // add container to as child to insertPoint
-              Polymer.dom(fieldsContainer).appendChild(fieldContainer);
-
-              // udpate the disabled status
-              self.disabledChanged(self.disabled, self.disabled);
-            } else {
-              console.log('Property name is invalid. Skipping ' + propertyName + ' property');
-              console.log('Property definition is:  ', schemaHelpers.formatJson(propertyDefinition));
-            }
-          });
-
-
-          // initialize default values after elements are added to the DOM to ensure that listeners are already in place
-          propertyNames.forEach(function (propertyName) {
-
-            propertyDefinition = propertyDefinitions[propertyName];
-            formElement = self.getElement(propertyName);
-
-            if (!formElement) return;
-
-            // handle default value
-            defaultValue = propertyDefinition.default;
-
-
-            // register .value variable in router and get value if exsting in state
-            if (!!formElement.$meta && !(formElement.$meta[0].invisible === true) && formElement.$meta[0].stateProperties === undefined) {
-              var ev = { name: propertyName, defaultValue: defaultValue, element: formElement };
-              Polymer.signal("register-state-var", ev);
-              if (ev.value !== undefined) defaultValue = ev.value;
-            }
-
-            // setup changed listeners for stateProperties
-            if (!!formElement.$meta && formElement.$meta[0].stateProperties !== undefined) {
-              for (var i = 0; i < formElement.$meta[0].stateProperties.length; i++) {
-                var propName = formElement.$meta[0].stateProperties[i];
-                var elName = formElement.id;
-                var ev = { name: elName + "." + propName, defaultValue: formElement[propName], element: formElement };
-                Polymer.signal("register-state-var", ev);
-                if (ev.value !== undefined) formElement[propName] = ev.value;
-              }
-            }
-
-
-            // if default value is not null or undefined and regular value is null or undefined
-            // loading initial value will trigger value-changed event to update .data if defaultValue is valid
-            if (schemaHelpers.notNullOrEmpty(defaultValue) && schemaHelpers.isNullOrEmpty(value)) {
-              formElement.value = defaultValue;
-
-              // *ma* setting the defautValue should be after setting up the event listener and only the listener should handle
-              //      the value change; but it seems that setting the initial value doesn't trigger a change event consistently
-              //      so as a workaround we call the event handler directly before setting up the listener
-
-              self._updateDataObject(propertyName, formElement, defaultValue);
-            }
-
-          });
-
-          self.fire('rendered', this, { bubbles: false });
-        } else {
-          //TODO Implement clear of data property
-        }
-
-        // add div class="clearfix"
-        var clearfixDiv = document.createElement('div');
-        Polymer.dom(clearfixDiv).classList.add('clearfix');
-        Polymer.dom(fieldsContainer).appendChild(clearfixDiv);
-
+      // initialize data with defaults when empty
+      if (Object.getOwnPropertyNames(self.data).length == 0) {
+        self.data = this._calculateInitialDataFromSchemaProperties(propertyDefinitions);
       }
+
+      // add schema elements to DOM
+      nonGroupedElements.forEach(function (element) {
+        var propertyName = element.name;
+        var propertyDefinition = element.definition;
+        self._renderSingleElement(propertyName, propertyDefinition, divPrototype, fieldsContainer);
+      });
+
+      if (formGroups.length) {
+        // create tab group
+        var col12 = divPrototype.cloneNode(true);
+        Polymer.dom(col12).classList.add('col-12');
+        var carbonTabs = document.createElement('at-carbon-tabs');
+        Polymer.dom(fieldsContainer).appendChild(col12);
+        Polymer.dom(col12).appendChild(carbonTabs);
+
+        var col12 = divPrototype.cloneNode(true);
+        Polymer.dom(col12).classList.add('col-12');
+        var ironPages = document.createElement('iron-pages');
+        Polymer.dom(fieldsContainer).appendChild(col12);
+        Polymer.dom(col12).appendChild(ironPages);
+
+        ironPages.attrForSelected = 'id';
+
+        formGroups.forEach(function(group, index) {
+          var name = group.name;
+          var label = group.label;
+          var carbonTab = document.createElement('at-carbon-tab');
+          Polymer.dom(carbonTab).setAttribute('id', name);
+          Polymer.dom(carbonTab).innerHTML = label;
+          Polymer.dom(carbonTabs).appendChild(carbonTab);
+
+          var ironPage = divPrototype.cloneNode(true);
+          Polymer.dom(ironPages).appendChild(ironPage);
+          Polymer.dom(ironPage).setAttribute('id', name);
+
+          var elements = group.elements;
+          elements.forEach(function (element, index) {
+            var propertyName = element.name;
+            var propertyDefinition = element.definition;
+
+            self._renderSingleElement(propertyName, propertyDefinition, divPrototype, ironPage);
+          });
+        });
+
+        carbonTabs.$.tabsContent.attrForSelected = 'id';
+        carbonTabs.selected = self.activeTab || formGroups[0].name;
+        ironPages.selected = self.activeTab || formGroups[0].name;
+
+        carbonTabs.addEventListener('selected-changed', function(event) {
+          ironPages.selected = event.detail.value;
+          self.activeTab = event.detail.value;
+        });
+      }
+
+      var propertyNames = Object.getOwnPropertyNames(self.schema.properties);
+      var propertyDefinitions = self.schema.properties;
+
+      // initialize default values after elements are added to the DOM to ensure that listeners are already in place
+      propertyNames.forEach(function (propertyName) {
+
+        var propertyDefinition = propertyDefinitions[propertyName];
+        var formElement = self.getElement(propertyName);
+
+        if (!formElement) return;
+
+        // handle default value
+        var defaultValue = propertyDefinition.default;
+
+
+        // register .value variable in router and get value if exsting in state
+        if (!!formElement.$meta && !(formElement.$meta[0].invisible === true) && formElement.$meta[0].stateProperties === undefined) {
+          var ev = { name: propertyName, defaultValue: defaultValue, element: formElement };
+          Polymer.signal("register-state-var", ev);
+          if (ev.value !== undefined) defaultValue = ev.value;
+        }
+
+        // setup changed listeners for stateProperties
+        if (!!formElement.$meta && formElement.$meta[0].stateProperties !== undefined) {
+          for (var i = 0; i < formElement.$meta[0].stateProperties.length; i++) {
+            var propName = formElement.$meta[0].stateProperties[i];
+            var elName = formElement.id;
+            var ev = { name: elName + "." + propName, defaultValue: formElement[propName], element: formElement };
+            Polymer.signal("register-state-var", ev);
+            if (ev.value !== undefined) formElement[propName] = ev.value;
+          }
+        }
+
+        // if default value is not null or undefined and regular value is null or undefined
+        // loading initial value will trigger value-changed event to update .data if defaultValue is valid
+        if (schemaHelpers.notNullOrEmpty(defaultValue) && schemaHelpers.isNullOrEmpty(value)) {
+          formElement.value = defaultValue;
+
+          // *ma* setting the defautValue should be after setting up the event listener and only the listener should handle
+          //      the value change; but it seems that setting the initial value doesn't trigger a change event consistently
+          //      so as a workaround we call the event handler directly before setting up the listener
+
+          self._updateDataObject(propertyName, formElement, defaultValue);
+        }
+
+      });
+
+      // add div class="clearfix"
+      var clearfixDiv = document.createElement('div');
+      Polymer.dom(clearfixDiv).classList.add('clearfix');
+      Polymer.dom(fieldsContainer).appendChild(clearfixDiv);
+
+      self.fire('rendered', this, { bubbles: false });
 
       var resizeSensor = this.$.resizeSensor;
       resizeSensor.reset();
@@ -578,6 +572,111 @@
       var event = this._createEventObject("_start", null, null, null, this.data);
       this._invokeActionListeners(event);
 
+    },
+
+    _renderSingleElement: function (propertyName, propertyDefinition, divPrototype, fieldsFragment) {
+      var self = this;
+      var defaultValue;
+      var value;
+      var xgridcols;
+      var gridColsCssName;
+      var fieldContainer;
+      var formElement;
+      var displayType;
+
+      if (schemaHelpers.isPropertyNameValid(propertyName)) {
+        displayType = schemaHelpers.getDisplayType(propertyDefinition, []);
+
+        // handle xgridcols
+        xgridcols = displayType === "section" ? 12 : 6;
+        if (schemaHelpers.notNullOrEmpty(propertyDefinition.xgridcols)) {
+          xgridcols = parseInt(propertyDefinition.xgridcols);
+        }
+        xgridcols = displayType === "section" ? 12 : xgridcols;
+
+        // create element for field
+        formElement = schemaHelpers.createElement(propertyName, displayType, propertyDefinition);
+        Polymer.dom(formElement).setAttribute('id', propertyName);
+
+        // create the field container
+        fieldContainer = document.createElement('div');
+        gridColsCssName = "col-" + xgridcols;
+        Polymer.dom(fieldContainer).classList.add(gridColsCssName);
+
+        // special container for at-form-toggle to allow smaller height in vertical mode
+        if (formElement.tagName.toLowerCase() == "at-form-checkbox") {
+          Polymer.dom(fieldContainer).classList.add("at-form-checkbox");
+        }
+
+        if (formElement.clearUIValidState !== undefined) {
+          // at-form-section doesn't have clearUIValidState function nor does it need one
+          formElement.clearUIValidState();
+        }
+
+        // setup changed listener for .value property to update data and call listeners
+        if (formElement.properties["value"] != undefined) {
+          formElement.addEventListener('value-changed', function (event) {
+            // get dom node of changed element
+            var changedElement = self.getElement(event.target.id);
+            self._updateDataObject(event.target.id, changedElement, event.detail.value);
+          });
+        }
+
+        // setup changed listeners for stateProperties
+        if (!!formElement.$meta && formElement.$meta[0].stateProperties !== undefined) {
+          for (var i = 0; i < formElement.$meta[0].stateProperties.length; i++) {
+            var statePropertyName = formElement.$meta[0].stateProperties[i];
+
+            if (statePropertyName !== "value") {  // value is already handled in _updateDataObject
+
+              formElement.addEventListener(Polymer.CaseMap.camelToDashCase(statePropertyName) + '-changed', function (event) {
+                var elName = event.target.id;
+                var propName = event.type.replace("-changed", "");
+                propName = Polymer.CaseMap.dashToCamelCase(propName);
+                var ev = { name: elName + "." + propName, value: event.detail.value };
+                Polymer.signal("update-state-var", ev);
+              });
+
+            }
+          }
+        }
+
+        if (formElement.valid !== undefined) {
+          self.elementsToValidate.push(formElement);
+        }
+
+        // if at-core-dashboard is hidden, element should be hidden as well
+        if (self.hide) {
+          formElement.hide = true;
+        }
+
+        // append paper element to its container
+        Polymer.dom(fieldContainer).appendChild(formElement);
+
+        if (formElement.hide) {
+          Polymer.dom(fieldContainer).classList.add('hidden');
+        }
+
+        // add container to as child to insertPoint
+        Polymer.dom(fieldsFragment).appendChild(fieldContainer);
+
+        // udpate the disabled status
+        self.disabledChanged(self.disabled, self.disabled);
+      } else {
+        console.log('Property name is invalid. Skipping ' + propertyName + ' property');
+        console.log('Property definition is:  ', schemaHelpers.formatJson(propertyDefinition));
+      }
+    },
+
+    _activeTabChanged: function (newValue, oldValue) {
+      // this is here to prevent rerendering of at-core-form when activeTab
+      // is updated by clicking an at-carbon-tab on at-carbon-tabs
+      if (this.tabMode !== "tab") { return; }
+
+      var carbonTabs = Polymer.dom(this.root).querySelector('at-carbon-tabs');
+      if (carbonTabs && carbonTabs.selected !== newValue) {
+        carbonTabs.selected = newValue;
+      }
     },
 
     /* *ij*
