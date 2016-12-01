@@ -17,6 +17,15 @@
     <style include="at-core-style-classes"></style>
     <style include="now-card-styles"></style>
     <style>
+      :host {
+        display: block;
+        box-sizing: border-box;
+      }
+
+      :host * {
+        box-sizing: border-box;
+      }
+
       .at-core-dashboard-wrapper {
         position: relative;
         height: 100%;
@@ -46,15 +55,15 @@
       at-form-checkbox {
         min-height: 76px;
       }
-        /* workaround for IE11 flexbox min-height bug */
+      /* workaround for IE11 flexbox min-height bug */
 
-        _:-ms-fullscreen,
-        at-form-checkbox::before {
-          content: "";
-          display: inline-block;
-          min-height: 38px;
-          visibility: hidden;
-        }
+      _:-ms-fullscreen,
+      at-form-checkbox::before {
+        content: "";
+        display: inline-block;
+        min-height: 38px;
+        visibility: hidden;
+      }
 
       .vertical .col-6.at-form-checkbox {
         min-height: 32px;
@@ -64,15 +73,15 @@
       .vertical .col-6 at-form-checkbox {
         min-height: 32px;
       }
-        /* workaround for IE11 flexbox min-height bug */
+      /* workaround for IE11 flexbox min-height bug */
 
-        _:-ms-fullscreen,
-        .vertical .col-6 at-form-checkbox::before {
-          content: "";
-          display: inline-block;
-          min-height: 16px;
-          visibility: hidden;
-        }
+      _:-ms-fullscreen,
+      .vertical .col-6 at-form-checkbox::before {
+        content: "";
+        display: inline-block;
+        min-height: 16px;
+        visibility: hidden;
+      }
     </style>
     <div class="at-core-dashboard-wrapper">
       <at-core-resize-sensor id="resizeSensor"></at-core-resize-sensor>
@@ -87,7 +96,7 @@
   'use strict';
   Polymer({
     is: 'at-core-dashboard',
-    behaviors: [Tangere.behavior.handleLink, Tangere.behaviors.i18n],
+    behaviors: [ Tangere.behavior.handleLink, Tangere.behaviors.i18n ],
     hostAttributes: {
       tabindex: 0
     },
@@ -170,33 +179,39 @@
       },
 
       /**
-      * at-core-form tabMode governs the rendering of at-form-section <br/>
-      * tabMode === default, renders at-form-section as a heading
-      * tabMode === tab, renders at-form-section as a tab
+      * at-core-form sectionMode governs the rendering of at-form-section <br/>
+      * sectionMode === default, renders at-form-section as a heading
+      * sectionMode === tab, renders at-form-section as a tab
       * all form-section elements form a tab group
       * iron-pages hold the elements belonging to a tab group
       * clicking a tab changes elements currently visible on screen
       *
-      * @property tabMode
+      * @property sectionMode
       * @type string
       * @default default
       */
-      tabMode: {
+      sectionMode: {
         type: String,
-        value: 'default',
+        value: 'auto',
         xtype: "enum",
         xvaluelist: [{
-          title: "Default",
-          value: "default"
+          title: "Always Sections",
+          value: "sections"
         }, {
-          title: "Tab Layout",
-          value: "tab"
+          title: "Always Tabs",
+          value: "tabs"
+        }, {
+          title: "Responsive",
+          value: "auto"
+        }, {
+          title: "Tabs in mobile mode",
+          value: "mobile"
         }]
       },
 
       /**
-       * holds the value of the currently active tab when tabMode === tab <br/>
-       * has value of "" when tabMode === default
+       * holds the value of the currently active tab when sectionMode === tab <br/>
+       * has value of "" when sectionMode === default
        *
        * @property activeTab
        * @type string
@@ -220,7 +235,7 @@
     set valid(newValue) { },
 
     observers: [
-      '_schemaChanged(schema, tabMode)'
+      '_schemaChanged(schema, sectionMode, layout)'
     ],
 
     listeners: {
@@ -251,7 +266,7 @@
     },
 
     updateLayout: function (newWidth, oldWidth) {
-
+      if (isNaN(newWidth)) { return; }
       if (newWidth < 600) {
         this.layout = "vertical";
       } else {
@@ -312,7 +327,7 @@
       coreForm.updateLayout(currWidth);
     },
 
-    _schemaChanged: function (newValue, tabMode) {
+    _schemaChanged: function (newValue, sectionMode, layout) {
       var schemaHelpers = window.schemaHelpers;
       var self = this;
 
@@ -359,7 +374,7 @@
           nonImportedElements.push(propDef);
         }
 
-        if (tabMode === "tab") {
+        if (sectionMode === "tabs" || (["auto", "mobile"].indexOf(sectionMode) !== -1 && layout === "vertical")) {
           if (displayType !== 'section') {
             currentGroupElements.push({ name: propName, definition: propDef });
           } else {
@@ -372,7 +387,9 @@
               elements:  currentGroupElements
             });
           }
-        } else {
+        } else if (sectionMode === "sections" || (sectionMode === "auto" && layout === "horizontal")) {
+          nonGroupedElements.push({ name: propName, definition: propDef });
+        } else if (sectionMode === "mobile" && layout === "horizontal" && displayType !== 'section') {
           nonGroupedElements.push({ name: propName, definition: propDef });
         }
       });
@@ -546,7 +563,7 @@
 
       // add div class="clearfix"
       var clearfixDiv = document.createElement('div');
-      Polymer.dom(clearfixDiv).classList.add('clearfix');
+      Polymer.dom(clearfixDiv).classList.add('clear-float');
       Polymer.dom(fieldsContainer).appendChild(clearfixDiv);
 
       self.fire('rendered', this, { bubbles: false });
@@ -670,7 +687,6 @@
     _activeTabChanged: function (newValue, oldValue) {
       // this is here to prevent rerendering of at-core-form when activeTab
       // is updated by clicking an at-carbon-tab on at-carbon-tabs
-      if (this.tabMode !== "tab") { return; }
 
       var carbonTabs = Polymer.dom(this.root).querySelector('at-carbon-tabs');
       if (carbonTabs && carbonTabs.selected !== newValue) {
