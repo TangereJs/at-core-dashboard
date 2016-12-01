@@ -13,7 +13,6 @@
     "at-theme": "tangerejs/at-theme#0.8-preview",
     "at-core-schema": "tangerejs/at-core-schema#0.8-preview",
     "at-carbon-moment": "tangerejs/at-carbon-moment#0.8-preview",
-    "at-carbon-tabs": "TangereJs/at-carbon-tabs#0.8-preview",
-    "iron-pages": "PolymerElements/iron-pages#master"
+    "at-carbon-tabs": "TangereJs/at-carbon-tabs#0.8-preview"
   }
 }
