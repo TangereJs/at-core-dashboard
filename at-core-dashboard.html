@@ -468,7 +468,8 @@
           (sectionMode === "auto" && layout === "horizontal") ||
           (sectionMode === "mobile" && layout === "horizontal");
 
-        self._hideHeadings = sectionMode === "mobile" && layout === "horizontal";
+        self._hideHeadings = ["mobile", "tabs"].indexOf(sectionMode) !== -1 ||
+          (sectionMode === "auto" && layout === "vertical");
         var selectedSection = self.activeTab || formGroups[0].name;
 
         // create tab group
@@ -698,9 +699,10 @@
       var hideTabs = self._hideTabs = sectionMode ==="sections" ||
         (sectionMode === "auto" && layout === "horizontal") ||
         (sectionMode === "mobile" && layout === "horizontal");
-      var hideHeadings = self._hideHeadings = sectionMode === "mobile" && layout === "horizontal";
-      var selectedSection = this.activeTab;
+      var hideHeadings = self._hideHeadings = ["mobile", "tabs"].indexOf(sectionMode) !== -1 ||
+        (sectionMode === "auto" && layout === "vertical");
 
+      var selectedSection = this.activeTab;
       if (carbonTabs) { carbonTabs.hidden = hideTabs; }
       sections.forEach(function(section, index) {
         var sectionId = section.getAttribute('at-core-form-section-id');
@@ -708,7 +710,7 @@
       });
 
       headings.forEach(function(heading, index){
-        heading.hide = hideHeadings;        
+        heading.hide = hideHeadings;
       });
 
     },
