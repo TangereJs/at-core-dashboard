@@ -430,7 +430,7 @@
           }, function (e) {
             // import failed
             console.log("import failed: " + e.target.href);
-          });
+          }, true);
         });
       } else {
         this._renderSchema(nonGroupedElements, formGroups);
