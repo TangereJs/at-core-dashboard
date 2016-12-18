@@ -227,8 +227,9 @@
       return this.data.model;
     },
 
-    set model(newValue) {
+    set model(newValue) {     
       this.data.model = newValue;
+      this.dataChanged(this.data);
     },
 
     set valid(newValue) { },
@@ -331,7 +332,10 @@
       var schemaHelpers = window.schemaHelpers;
       var self = this;
 
-      // debugger;
+      // don't render empty initial schema
+      if (!this._initialViewRendered && newValue && newValue.properties && Object.keys(newValue.properties).length==0) {
+        return;
+      }
 
       if (schemaHelpers.isString(newValue)) {
         /*
@@ -388,6 +392,9 @@
         }
       });
 
+      this._nonGroupedElements = nonGroupedElements;
+      this._formGroups = formGroups;
+
       var displayTypeToFormElementMapping = {
         date: "at-form-date",
         time: "at-form-date",
@@ -425,7 +432,7 @@
             // import was successful
             pendingImportsCount -= 1;
             if (!pendingImportsCount) {
-              self._renderSchema(nonGroupedElements, formGroups);
+              self._render();
             }
           }, function (e) {
             // import failed
@@ -433,15 +440,17 @@
           }, true);
         });
       } else {
-        this._renderSchema(nonGroupedElements, formGroups);
+        this._render();
       }
     },
 
-    _renderSchema: function (nonGroupedElements, formGroups) {
+    _render: function () {
 
       var self = this;
       var schemaHelpers = window.schemaHelpers;
       var divPrototype = document.createElement('div');
+      var nonGroupedElements = this._nonGroupedElements;
+      var formGroups = this._formGroups;
 
       self.elementsToValidate = [];
 
@@ -593,6 +602,8 @@
       var event = this._createEventObject("_start", null, null, null, this.data);
       this._invokeActionListeners(event);
 
+      this._initialViewRendered = true;  
+      
     },
 
     _renderSingleElement: function (propertyName, propertyDefinition, divPrototype, fieldsFragment) {
@@ -779,47 +790,14 @@
       if (!this._isReady) {
         return;
       }
-
-      return; // *ma*   can data be changed without changing an element first ??
-
-      var fieldsContainer = Polymer.dom(this.$.insertPoint);
-      var fieldElement;
-      var properties = this.schema.properties;
-      var initialData = this._calculateInitialDataFromSchemaProperties(properties);
-
-      if (schemaHelpers.isString(newValue)) {
-        try {
-          newValue = JSON.parse(newValue);
-          this.data = newValue;
-          return;
-        } catch (e) {
-          console.log(e);
-        }
+      
+      if (!this._initialViewRendered) {
+        return;  // view not yet rendered, so data is not really changed
       }
 
-      if (schemaHelpers.isObject(oldValue)) {
-        Object.getOwnPropertyNames(initialData).forEach(function (propertyName) {
-          if (!newValue.hasOwnProperty(propertyName)) {
-            newValue[propertyName] = initialData[propertyName];
-          }
-        });
-      }
-
-      var self = this;
-      if (schemaHelpers.isObject(newValue)) {
-        Object.getOwnPropertyNames(newValue).forEach(function (propertyName) {
-          fieldElement = self.getElement(propertyName);
-          if (schemaHelpers.valueNotReadOnly(fieldElement)) {
-            fieldElement.value = newValue[propertyName];
-          }
-        });
-      } else {
-        console.log('at-core-dashboard expects objects as new value, but got ' + schemaHelpers.formatJson(newValue) + ' instead');
-      }
-
-      this.fire('data-changed', {
-        value: this.data
-      });
+      // render again with new data
+      this._render();
+      
     },
 
     // invoke listeners on all elements listening for event
