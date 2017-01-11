@@ -227,7 +227,7 @@
       return this.data.model;
     },
 
-    set model(newValue) {     
+    set model(newValue) {
       this.data.model = newValue;
       this.dataChanged(this.data);
     },
@@ -563,6 +563,7 @@
 
         // if default value is not null or undefined and regular value is null or undefined
         // loading initial value will trigger value-changed event to update .data if defaultValue is valid
+        var value;
         if (schemaHelpers.notNullOrEmpty(defaultValue) && schemaHelpers.isNullOrEmpty(value)) {
           formElement.value = defaultValue;
 
@@ -602,8 +603,8 @@
       var event = this._createEventObject("_start", null, null, null, this.data);
       this._invokeActionListeners(event);
 
-      this._initialViewRendered = true;  
-      
+      this._initialViewRendered = true;
+
     },
 
     _renderSingleElement: function (propertyName, propertyDefinition, divPrototype, fieldsFragment) {
@@ -790,14 +791,14 @@
       if (!this._isReady) {
         return;
       }
-      
+
       if (!this._initialViewRendered) {
         return;  // view not yet rendered, so data is not really changed
       }
 
       // render again with new data
       this._render();
-      
+
     },
 
     // invoke listeners on all elements listening for event

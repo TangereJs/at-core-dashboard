@@ -4,16 +4,19 @@
   "private": true,
   "dependencies": {
     "tangere": "TangereJs/tangere#0.8-preview",
-    "at-form-text": "tangerejs/at-form-text#0.8-preview",
-    "at-form-date": "tangerejs/at-form-date#0.8-preview",
-    "at-form-daterange": "tangerejs/at-form-daterange#0.8-preview",
-    "at-chart-core": "tangerejs/at-chart-core#0.8-preview",
-    "at-chart-strudel": "tangerejs/at-chart-strudel#0.8-preview",
-    "at-core-signals": "TangereJs/at-core-signals#0.8-preview",
+    "at-core-schema": "tangerejs/at-core-schema#0.8-preview",
     "at-core-resize-sensor": "tangerejs/at-core-resize-sensor#0.8-preview",
     "at-theme": "tangerejs/at-theme#0.8-preview",
-    "at-core-schema": "tangerejs/at-core-schema#0.8-preview",
-    "at-carbon-moment": "tangerejs/at-carbon-moment#0.8-preview",
-    "at-carbon-tabs": "TangereJs/at-carbon-tabs#0.8-preview"
+    "at-carbon-tabs": "TangereJs/at-carbon-tabs#0.8-preview",
+    "at-i18n": "TangereJs/at-i18n#0.8-preview",
+    "at-now": "TangereJs/at-now#0.8-preview",
+    "at-core-style-classes": "TangereJs/at-core-style-classes#0.8-preview",
+    "at-core-signals": "TangereJs/at-core-signals#0.8-preview",
+    "at-form-text": "tangerejs/at-form-text#0.8-preview",
+    "at-core-activity": "TangereJs/at-core-activity#0.8-preview",
+    "at-core-spinner": "TangereJs/at-core-spinner#0.8-preview",
+    "at-core-signals": "TangereJs/at-core-signals#0.8-preview",
+    "at-core-card": "TangereJs/at-core-card#0.8-preview",
+    "at-carbon-moment": "tangerejs/at-carbon-moment#0.8-preview"
   }
 }
