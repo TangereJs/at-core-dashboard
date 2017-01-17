@@ -634,7 +634,19 @@
         // create the field container
         fieldContainer = document.createElement('div');
         gridColsCssName = "col-" + xgridcols;
+
+        // handle xclass setting
+        if (schemaHelpers.notNullOrEmpty(propertyDefinition.xclass)) {
+          gridColsCssName = gridColsCssName + propertyDefinition.xclass;
+        }
+
         Polymer.dom(fieldContainer).classList.add(gridColsCssName);
+
+        // handle xstyle setting
+        if (schemaHelpers.notNullOrEmpty(propertyDefinition.xstyle)) {
+          Polymer.dom(fieldContainer).setAttribute('style', propertyDefinition.xstyle);
+        }
+
 
         // special container for at-form-toggle to allow smaller height in vertical mode
         if (formElement.tagName.toLowerCase() == "at-form-checkbox") {
