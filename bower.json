@@ -1,6 +1,6 @@
 {
   "name": "at-core-dashboard",
-  "version": "0.0.1.334",
+  "version": "0.0.1.340",
   "private": true,
   "dependencies": {
     "tangere": "TangereJs/tangere#master",
@@ -8,13 +8,12 @@
     "at-core-resize-sensor": "tangerejs/at-core-resize-sensor#master",
     "at-theme": "tangerejs/at-theme#master",
     "at-carbon-tabs": "TangereJs/at-carbon-tabs#master",
-    "at-i18n": "TangereJs/at-i18n#master",   
+    "at-i18n": "TangereJs/at-i18n#master",
     "at-core-style-classes": "TangereJs/at-core-style-classes#master",
     "at-core-signals": "TangereJs/at-core-signals#master",
     "at-form-text": "tangerejs/at-form-text#master",
     "at-core-activity": "TangereJs/at-core-activity#master",
     "at-core-spinner": "TangereJs/at-core-spinner#master",
-    "at-core-signals": "TangereJs/at-core-signals#master",
     "at-core-card": "TangereJs/at-core-card#master",
     "at-carbon-moment": "tangerejs/at-carbon-moment#master"
   }

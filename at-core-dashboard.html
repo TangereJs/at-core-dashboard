@@ -637,7 +637,10 @@
 
         // handle xclass setting
         if (schemaHelpers.notNullOrEmpty(propertyDefinition.xclass)) {
-          gridColsCssName = gridColsCssName + propertyDefinition.xclass;
+          var xclasses = propertyDefinition.xclass.split(" ");
+          for (var ic = 0; ic < xclasses.length; ic++) {
+            Polymer.dom(fieldContainer).classList.add(xclasses[ic]);
+          }
         }
 
         Polymer.dom(fieldContainer).classList.add(gridColsCssName);
