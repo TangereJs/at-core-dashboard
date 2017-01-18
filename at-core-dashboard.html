@@ -458,6 +458,19 @@
       // clear the previous html content in the container
       Polymer.dom(fieldsContainer).innerHTML = '';
 
+      // process schema.$meta.xclass and schema.$meta.xstyle
+      if (schemaHelpers.isObject(this.schema.$meta)) {
+        if (schemaHelpers.isString(this.schema.$meta.xclass) && this.schema.$meta.xclass !== "") {
+          var cssClasses = this.schema.$meta.xclass.split(' ');
+          cssClasses.forEach(function (cssClass, index) {
+            Polymer.dom(fieldsContainer).classList.add(cssClass);
+          });
+        }
+        if (schemaHelpers.isString(this.schema.$meta.xstyle) && this.schema.$meta.xstyle !== "") {
+          Polymer.dom(fieldsContainer).setAttribute('style', this.schema.$meta.xstyle);
+        }
+      }
+
       // initialize data with defaults when empty
       if (!self.data || Object.getOwnPropertyNames(self.data).length === 0) {
         self.data = this._calculateInitialDataFromSchemaProperties(self.schema.properties);
