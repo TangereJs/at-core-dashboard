@@ -1,0 +1,77 @@
+<link rel="import" href="../tangere/tangere.html">
+<link rel="import" href="../at-core-activity/at-core-activity.html">
+<link rel="import" href="../at-core-view/at-core-view.html">
+<link rel="import" href="../at-core-item/at-core-item.html">
+
+<dom-module id="at-core-dashboard-cardcontainer">
+  <style>
+    :host {
+      position: relative;
+      width: 100%;
+      display: block;
+    }
+  </style>
+  <template>
+    <at-core-item id="item" item-component="{{itemComponent}}" view="{{view}}"></at-core-item>
+  </template>
+</dom-module>
+
+<script>
+  Polymer({
+    is: "at-core-dashboard-cardcontainer",
+    properties: {
+      itemComponent: {
+        type: String,
+        value: "",
+        notify: true
+      },
+      view: {
+        type: String,
+        value: "",
+        notify: true,
+        xtype: "code",
+        mode: "liquid"
+      },
+      value: {
+        type: Object,
+        notify: true,
+        value: null
+      }
+    },
+    $meta: [{
+      title: "Card Container",
+      type: "element",
+      xtype: "at-core-dashboard-cardcontainer"
+    }],
+    observers: [
+      'start(itemComponent,value)'
+    ],
+
+    actionListener: function (event) {
+      debugger;
+      this.value = this.modelRoot ? event.detail.model : event.detail.model.state;
+
+    },
+
+    start: function () {
+
+      this.debounce('at-core-dashboard-cardcontainer-start', function () {
+        
+        if (this.view) {
+          this.$.item.itemComponent = "";
+          this.$.item.view = this.view;
+        } else {
+          this.$.item.view = "";
+          this.$.item.itemComponent = this.itemComponent;
+        }
+
+        this.$.item.value = this.value;
+
+      }, 200);
+    },
+  
+    ready: function () {
+
+    }
+  });
+</script>
