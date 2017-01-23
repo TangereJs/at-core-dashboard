@@ -1,7 +1,6 @@
 <link rel="import" href="../tangere/tangere.html">
 <link rel="import" href="../at-theme/at-theme.html">
 <link rel="import" href="../at-carbon-moment/momentjs-import.html">
-
 <dom-module id="at-core-dashboard-echo">
   <template>
     <style include="at-form-common"></style>
@@ -57,6 +56,28 @@
         return current;
       },
 
+      _serializer: function (replacer, cycleReplacer) {
+        var stack = [], keys = []
+
+        if (cycleReplacer == null) cycleReplacer = function (key, value) {
+          if (stack[0] === value) return "[Circular ~]"
+          return "[Circular ~." + keys.slice(0, stack.indexOf(value)).join(".") + "]"
+        }
+
+        return function (key, value) {
+          if (stack.length > 0) {
+            var thisPos = stack.indexOf(this)
+            ~thisPos ? stack.splice(thisPos + 1) : stack.push(this)
+            ~thisPos ? keys.splice(thisPos, Infinity, key) : keys.push(key)
+            if (~stack.indexOf(value)) value = cycleReplacer.call(this, key, value)
+          }
+          else stack.push(value)
+
+          return replacer == null ? value : replacer.call(this, key, value)
+        }
+      },
+
+
       actionListener: function (event) {
 
         function isArray(obj) {
@@ -73,7 +94,23 @@
           var jsonDiv = this.create('div');
           var jsonPre = this.create('pre');
           Polymer.dom(jsonDiv).appendChild(jsonPre);
-          var eventJson = JSON.stringify(this.modelRoot ? this._getObjPath(event.detail.model, this.modelRoot) : event, null, " ");
+          var obj = this.modelRoot ? this._getObjPath(event.detail.model, this.modelRoot) : event;
+          var seen = [];
+
+          //var eventJson = JSON.stringify(obj, function (key, val) {
+          //  console.log(key);
+          //  if (val != null && typeof val == "object") {
+          //    if (seen.indexOf(val) >= 0) {
+          //      debugger;
+          //      return "__cycle__";
+          //    }
+          //    seen.push(val);
+          //  }
+          //  return val;
+          //}, " ");
+
+          var eventJson = JSON.stringify(obj, this._serializer(null, null), " ");
+
           var nowStr = moment().format("HH:mm:ss");
           jsonPre.textContent = nowStr + " " + this.modelRoot + ": " + eventJson;
           Polymer.dom(this.$.insertPoint).appendChild(jsonDiv);
