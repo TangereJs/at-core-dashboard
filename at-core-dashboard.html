@@ -596,6 +596,9 @@
 
       self.fire('rendered', this, { bubbles: false });
 
+      console.log("fire content-changed");
+      self.fire('content-changed', this, { bubbles: true });
+
       var resizeSensor = this.$.resizeSensor;
       resizeSensor.reset();
       var width = resizeSensor.queryWidth();
