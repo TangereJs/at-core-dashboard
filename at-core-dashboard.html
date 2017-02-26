@@ -418,7 +418,7 @@
 
           // construct elemHref
           var compUrl = this.resolveUrl("../");
-
+      
           if (document.URL.indexOf("/elements/designer-element/") >= 0) {
             compUrl = "/components/";
           }
@@ -438,7 +438,7 @@
             // import failed
             console.log("import failed: " + e.target.href);
           }, true);
-        });
+        }, this);
       } else {
         this._render();
       }
