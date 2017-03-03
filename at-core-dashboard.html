@@ -158,6 +158,11 @@
         notify: true,
         value: ""
       },
+      service: {
+        type: String,
+        value: "",
+        notify: true
+      },
       /**
        * at-core-dashboard can now have a one column or two column layout <br/>
        * by default a one column layout is used but a two column layout can be specified <br/>
@@ -555,7 +560,6 @@
         // handle default value
         var defaultValue = propertyDefinition.default;
 
-
         // register .value variable in router and get value if exsting in state
         if (!!formElement.$meta && !(formElement.$meta[0].invisible === true) && formElement.$meta[0].stateProperties === undefined) {
           var ev = { name: propertyName, defaultValue: defaultValue, element: formElement };
@@ -568,15 +572,22 @@
           for (var i = 0; i < formElement.$meta[0].stateProperties.length; i++) {
             var propName = formElement.$meta[0].stateProperties[i];
             var elName = formElement.id;
+
+            // service is a special property where container could provide a fallback property value
+            if (propName == "service" && this.service && !formElement[propName]) {
+              formElement[propName] = this.service;
+            }
+
             var ev = { name: elName + "." + propName, defaultValue: formElement[propName], element: formElement };
             Polymer.signal("register-state-var", ev);
             if (ev.value !== undefined) formElement[propName] = ev.value;
+
           }
         }
 
+
         // if default value is not null or undefined and regular value is null or undefined
-        // loading initial value will trigger value-changed event to update .data if defaultValue is valid
-        var value;
+        // loading initial value will trigger value-changed event to update .data if defaultValue is valid        
         if (schemaHelpers.notNullOrEmpty(defaultValue) && schemaHelpers.isNullOrEmpty(value)) {
           formElement.value = defaultValue;
 
@@ -587,7 +598,7 @@
           self._updateDataObject(propertyName, formElement, defaultValue);
         }
 
-      });
+      }, this);
 
       // add div class="clearfix"
       var clearfixDiv = document.createElement('div');
