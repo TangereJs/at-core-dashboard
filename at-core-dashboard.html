@@ -320,7 +320,7 @@
             formElement.hide = newValue;
           }
         });
-      }
+      }     
     },
 
     // when user switches to field settings tab, resize sensor is incorrectly initialized
@@ -534,6 +534,7 @@
 
         carbonTabs.$.tabsContent.attrForSelected = 'id';
         carbonTabs.selected = selectedSection;
+        self.activeTab = selectedSection;
 
         carbonTabs.addEventListener('selected-changed', function(event) {
           if (self._hideTabs) { return; }
