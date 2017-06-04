@@ -35,8 +35,7 @@
       }
 
       [class*='col-'] {
-        padding-left: 0;
-        padding-right: 0;
+        padding:0;
         float: left;
         min-height: inherit;
       }
@@ -147,6 +146,17 @@
         value: false,
         observer: 'disabledChanged'
       },
+      /**
+       * true when the mouse is over the element
+       * @property hover
+       * @type Boolean
+       * @default false
+       */
+      hover: {
+        type: Boolean,
+        value: false,
+        observer: '_hoverChanged'
+      },
       valid: {
         type: Boolean,
         notify: true,
@@ -228,6 +238,7 @@
       }
     },
 
+ 
     get model() {
       return this.data.model;
     },
@@ -245,7 +256,16 @@
     ],
 
     listeners: {
-      'resolve-name-prefix': 'resolveNamePrefix'
+      'resolve-name-prefix': 'resolveNamePrefix',
+      'mouseenter': '_onHostHover',
+      'focus': '_onHostHover',   // win touch, focus implies hover
+      'mouseleave': '_onHostUnhover'  
+    },
+    _onHostHover: function (e) {
+      this.hover = true;
+    },
+    _onHostUnhover: function (e) {
+      this.hover = false;
     },
 
     resolveNamePrefix: function (e) {
@@ -305,7 +325,16 @@
         element.focus();
       }
     },
-
+    _hoverChanged: function (newValue, oldValue) {
+      if (!this.__revealAble || this.__revealAble.length == 0 || Tangere.session.browser.mobile ) return;
+      for (var i = 0; i < this.__revealAble.length;i++) {
+        this.__revealAble[i].revealed = newValue;
+      }
+    },
+    _revealed: function() {
+      if (Tangere.session.browser.mobile) return true; // in mobile elements are always revealed
+      return this.hover; // reveal elements when mouse is over host
+    },
     hideChanged: function (newValue, oldValue) {
       var self = this;
       var insertPoint = this.$.insertPoint;
@@ -658,6 +687,13 @@
         // create element for field
         formElement = schemaHelpers.createElement(propertyName, displayType, propertyDefinition);
         Polymer.dom(formElement).setAttribute('id', propertyName);
+
+        // maintain list of element which contain revealable elements
+        if (!this.__revealAble) this.__revealAble = [];
+        if (typeof formElement.revealed == "boolean") {
+          formElement.revealed = this._revealed();
+          this.__revealAble.push(formElement);
+        }
 
         // create the field container
         fieldContainer = document.createElement('div');
