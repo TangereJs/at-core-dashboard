@@ -154,8 +154,11 @@
        */
       hover: {
         type: Boolean,
-        value: false,
-        observer: '_hoverChanged'
+        value: false
+      },
+      childActive: {
+        type: Boolean,
+        value: false
       },
       valid: {
         type: Boolean,
@@ -182,8 +185,7 @@
        * @property layout
        * @type string
        * @default vertical
-       */
-      // added for #684
+       */     
       layout: {
         type: String,
         value: "vertical",
@@ -252,18 +254,26 @@
 
     observers: [
       '_schemaChanged(schema)',
-      '_sectionLayoutChanged(sectionMode, layout)'
+      '_sectionLayoutChanged(sectionMode, layout)',
+      '_stateChanged(hover, childActive)'
     ],
 
     listeners: {
       'resolve-name-prefix': 'resolveNamePrefix',
       'mouseenter': '_onHostHover',
       'focus': '_onHostHover',   // win touch, focus implies hover
-      'mouseleave': '_onHostUnhover'  
+      'mouseleave': '_onHostUnhover',
+      'card-active': '_onCardActiveState'
     },
+
+    _onCardActiveState: function(e) {     
+      this.childActive = e.detail.value;     
+    },
+
     _onHostHover: function (e) {
       this.hover = true;
     },
+
     _onHostUnhover: function (e) {
       this.hover = false;
     },
@@ -325,7 +335,13 @@
         element.focus();
       }
     },
-    _hoverChanged: function (newValue, oldValue) {
+    _stateChanged: function (hover, childActive) {
+      var newValue = hover || childActive;
+      
+      if (this._state == undefined) this._state = newValue;
+      if (this._state == newValue) return;
+      this._state = newValue;
+     
       if (!this.__revealAble || this.__revealAble.length == 0 || Tangere.session.browser.mobile ) return;
       for (var i = 0; i < this.__revealAble.length;i++) {
         this.__revealAble[i].revealed = newValue;
@@ -333,7 +349,7 @@
     },
     _revealed: function() {
       if (Tangere.session.browser.mobile) return true; // in mobile elements are always revealed
-      return this.hover; // reveal elements when mouse is over host
+      return this.hover || this.childActive; // reveal elements when mouse is over host
     },
     hideChanged: function (newValue, oldValue) {
       var self = this;
