@@ -25,6 +25,12 @@
         box-sizing: border-box;
       }
 
+      .revealed.revealed.revealed.revealed.revealed.revealed.revealed {
+        background-color: white !important;
+        box-shadow: rgba(0, 0, 0, 0.098) 0px 2px 4px, rgba(0, 0, 0, 0.1) 0px 0px 3px !important;
+        border: #E8EBF1 !important;        
+      }
+
       .at-core-dashboard-wrapper {
         position: relative;
         height: 100%;
@@ -81,7 +87,7 @@
         visibility: hidden;
       }
     </style>
-    <div class="at-core-dashboard-wrapper">
+    <div class="at-core-dashboard-wrapper wrapper card" id="wrapper">
       <at-core-resize-sensor id="resizeSensor"></at-core-resize-sensor>
       <div class="clear-float"></div>
       <div id="insertPoint"></div>
@@ -267,7 +273,11 @@
     },
 
     _onCardActiveState: function(e) {     
-      this.childActive = e.detail.value;     
+      this.childActive = e.detail.value;
+      
+      // *todo* we need a customizable solution, this currently only handles cisco UC and theme
+      this.$.wrapper.classList.toggle("revealed", this.childActive);       
+      
     },
 
     _onHostHover: function (e) {
@@ -343,7 +353,7 @@
       this._state = newValue;
      
       if (!this.__revealAble || this.__revealAble.length == 0 || Tangere.session.browser.mobile ) return;
-      for (var i = 0; i < this.__revealAble.length;i++) {
+      for (var i = 0; i < this.__revealAble.length; i++) {       
         this.__revealAble[i].revealed = newValue;
       }
     },
