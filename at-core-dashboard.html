@@ -259,7 +259,7 @@
     set valid(newValue) { },
 
     observers: [
-      '_schemaChanged(schema)',
+      '_schemaChanged(schema, activeTab)',
       '_sectionLayoutChanged(sectionMode, layout)',
       '_stateChanged(hover, childActive)'
     ],
@@ -536,7 +536,10 @@
 
       // initialize data with defaults when empty
       if (!self.data || Object.getOwnPropertyNames(self.data).length === 0) {
-        self.data = this._calculateInitialDataFromSchemaProperties(self.schema.properties);
+        var initialData = this._calculateInitialDataFromSchemaProperties(self.schema.properties);
+        if (!schemaHelpers.areEqual(self.data, initialData)) {
+          self.data = initialData;
+        }
       }
 
       // add schema elements to DOM

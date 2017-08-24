@@ -246,7 +246,7 @@
           var form = fixture('asAttrTabModeSections');
 
           assert.deepEqual(form.schema, getSchema(), 'schema not set correctly');
-          assert.deepEqual(form.data, {}, 'data not set correctly');
+          assert.deepEqual(form.data, { _session: Tangere.session }, 'data not set correctly');
 
           var carbonTabs = Polymer.dom(form.$.insertPoint).querySelector('at-carbon-tabs');
           assert.isNotNull(carbonTabs, 'carbon tabs not created');
@@ -267,7 +267,7 @@
           var form = fixture('asAttrTabModeTabs');
 
           assert.deepEqual(form.schema, getSchema(), 'schema not set correctly');
-          assert.deepEqual(form.data, {}, 'data not set correctly');
+          assert.deepEqual(form.data, { _session: Tangere.session }, 'data not set correctly');
 
           var carbonTabs = Polymer.dom(form.$.insertPoint).querySelector('at-carbon-tabs');
           assert.isNotNull(carbonTabs, 'carbon tabs not created');
@@ -301,7 +301,7 @@
           var form = fixture('asAttrTabModeAuto');
 
           assert.deepEqual(form.schema, getSchema(), 'schema not set correctly');
-          assert.deepEqual(form.data, {}, 'data not set correctly');
+          assert.deepEqual(form.data, { _session: Tangere.session }, 'data not set correctly');
 
           assert.equal(form.layout, "horizontal", "form layout is not correct");
 
@@ -337,7 +337,7 @@
           var form = fixture('asAttrTabModeMobile');
 
           assert.deepEqual(form.schema, getSchema(), 'schema not set correctly');
-          assert.deepEqual(form.data, {}, 'data not set correctly');
+          assert.deepEqual(form.data, { _session: Tangere.session }, 'data not set correctly');
 
           assert.equal(form.layout, "horizontal", "form layout is not correct");
 
@@ -388,7 +388,7 @@
 
 
           assert.deepEqual(form.schema, getSchema(), 'schema not set correctly');
-          assert.deepEqual(form.data, {}, 'data not set correctly');
+          assert.deepEqual(form.data, { _session: Tangere.session }, 'data not set correctly');
 
           var carbonTabs = Polymer.dom(form.$.insertPoint).querySelector('at-carbon-tabs');
           assert.isNotNull(carbonTabs, 'carbon tabs not created');
@@ -412,7 +412,7 @@
           form.schema = getSchema();
 
           assert.deepEqual(form.schema, getSchema(), 'schema not set correctly');
-          assert.deepEqual(form.data, {}, 'data not set correctly');
+          assert.deepEqual(form.data, { _session: Tangere.session }, 'data not set correctly');
 
           var carbonTabs = Polymer.dom(form.$.insertPoint).querySelector('at-carbon-tabs');
           assert.isNotNull(carbonTabs, 'carbon tabs not created');
@@ -449,7 +449,7 @@
           form.schema = getSchema();
 
           assert.deepEqual(form.schema, getSchema(), 'schema not set correctly');
-          assert.deepEqual(form.data, {}, 'data not set correctly');
+          assert.deepEqual(form.data, { _session: Tangere.session }, 'data not set correctly');
 
           assert.equal(form.layout, "horizontal", "form layout is not correct");
 
@@ -488,7 +488,7 @@
           form.schema = getSchema();
 
           assert.deepEqual(form.schema, getSchema(), 'schema not set correctly');
-          assert.deepEqual(form.data, {}, 'data not set correctly');
+          assert.deepEqual(form.data, { _session: Tangere.session }, 'data not set correctly');
 
           assert.equal(form.layout, "horizontal", "form layout is not correct");
 
