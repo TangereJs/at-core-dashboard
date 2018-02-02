@@ -942,7 +942,17 @@
         }
 
         // ignore properties without listeners
-        if (!propDef.actionListeners || actionListeners.length == 0) continue;
+        if (!propDef.actionListeners) continue;
+                
+        // fix issue that empty listener [] might be saved as [ "" ]        
+        if (actionListeners.length == 1 && actionListeners[0] === "") {
+          actionListeners = [];
+        }
+
+        // if no listeners are specified then listen for _all per default 
+        if (actionListeners.length == 0) {
+          actionListeners.push("_start");
+        }
 
         for (var j = 0; j < actionListeners.length; j++) {
 
