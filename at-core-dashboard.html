@@ -9,6 +9,10 @@
 <link rel="import" href="../at-now/now-card-styles.html">
 <link rel="import" href="../at-core-style-classes/at-core-style-classes.html">
 <link rel="import" href="../at-core-signals/at-core-signals.html">
+<link rel="import" href="../tangere/at-actionhandler-behavior.html">
+<link rel="import" href="../at-core-modal/at-core-modal.html">
+<link rel="import" href="../at-core-api-post/at-core-api-post.html">
+
 
 <dom-module id="at-core-dashboard">
   <template>
@@ -87,12 +91,14 @@
         visibility: hidden;
       }
     </style>
+    <at-core-api-post id="post"></at-core-api-post>
     <div class="at-core-dashboard-wrapper wrapper card" id="wrapper">
       <at-core-resize-sensor id="resizeSensor"></at-core-resize-sensor>
       <div class="clear-float"></div>
       <div id="insertPoint"></div>
     </div>
     <content></content>
+    <at-core-modal id="dialog"></at-core-modal> 
   </template>
 </dom-module>
 
@@ -100,7 +106,7 @@
   'use strict';
   Polymer({
     is: 'at-core-dashboard',
-    behaviors: [ Tangere.behavior.handleLink, Tangere.behaviors.i18n ],
+    behaviors: [Tangere.behavior.handleLink, Tangere.behaviors.i18n, Tangere.behaviors.actionhandler],
     hostAttributes: {
       tabindex: 0
     },
@@ -253,6 +259,7 @@
 
     set model(newValue) {
       this.data.model = newValue;
+      this.$.post.url = newValue._card.ServiceUrl;
       this.dataChanged(this.data);
     },
 
@@ -357,10 +364,12 @@
         this.__revealAble[i].revealed = newValue;
       }
     },
+
     _revealed: function() {
       if (Tangere.session.browser.mobile) return true; // in mobile elements are always revealed
       return this.hover || this.childActive; // reveal elements when mouse is over host
     },
+
     hideChanged: function (newValue, oldValue) {
       var self = this;
       var insertPoint = this.$.insertPoint;
@@ -414,7 +423,7 @@
 
       if (!schemaHelpers.isObject(newValue) || !schemaHelpers.isObject(newValue.properties)) {
         return;
-      }
+      }           
 
       // figure out the list of the elements that should be imported
       schemaHelpers.initializeCentralArrayOfComponents();
@@ -433,7 +442,7 @@
         var mapping = schemaHelpers.findMapping(displayType);
 
         if (!mapping) {
-          // element is not loaded; scheadule it for importHref
+          // element is not loaded; schedule it for importHref
           propDef.displayType = displayType;
           nonImportedElements.push(propDef);
         }
@@ -669,7 +678,7 @@
 
       self.fire('rendered', this, { bubbles: false });
 
-      console.log("fire content-changed");
+      //console.log("fire content-changed");
       self.fire('content-changed', this, { bubbles: true });
 
       var resizeSensor = this.$.resizeSensor;
@@ -686,9 +695,8 @@
 
       });
 
-      this.setFocus();
-
       // send _start event
+      this._executeAction("initialize");
       var event = this._createEventObject("_start", null, null, null, this.data);
       this._invokeActionListeners(event);
 
@@ -716,7 +724,13 @@
         }
         xgridcols = displayType === "section" ? 12 : xgridcols;
 
-        // create element for field
+        // special handling for at-core-view modelRoot 
+        if (displayType == "at-core-view") {
+          if (!propertyDefinition.modelRoot) propertyDefinition.modelRoot = "state.model"; // default is state.model
+          if (propertyDefinition.modelRoot == ".") propertyDefinition.modelRoot = "";           // . == empty modelRoot
+        }
+
+        // create element for field        
         formElement = schemaHelpers.createElement(propertyName, displayType, propertyDefinition);
         Polymer.dom(formElement).setAttribute('id', propertyName);
 
@@ -951,7 +965,7 @@
 
         // if no listeners are specified then listen for _all per default 
         if (actionListeners.length == 0) {
-          actionListeners.push("_start");
+          actionListeners.push("_all");
         }
 
         for (var j = 0; j < actionListeners.length; j++) {
