@@ -32,7 +32,7 @@
       .revealed.revealed.revealed.revealed.revealed.revealed.revealed {
         background-color: white !important;
         box-shadow: rgba(0, 0, 0, 0.098) 0px 2px 4px, rgba(0, 0, 0, 0.1) 0px 0px 3px !important;
-        border: #E8EBF1 !important;        
+        border: #E8EBF1 !important;
       }
 
       .at-core-dashboard-wrapper {
@@ -98,7 +98,7 @@
       <div id="insertPoint"></div>
     </div>
     <content></content>
-    <at-core-modal id="dialog"></at-core-modal> 
+    <at-core-modal id="dialog"></at-core-modal>
   </template>
 </dom-module>
 
@@ -197,7 +197,7 @@
        * @property layout
        * @type string
        * @default vertical
-       */     
+       */
       layout: {
         type: String,
         value: "vertical",
@@ -252,13 +252,13 @@
       }
     },
 
- 
+
     get model() {
       return this.data.model;
     },
 
     set model(newValue) {
-      this.data.model = newValue;      
+      this.data.model = newValue;
       this.$.post.url = newValue._card ?  newValue._card.ServiceUrl : "";
       this.dataChanged(this.data);
     },
@@ -279,12 +279,12 @@
       'card-active': '_onCardActiveState'
     },
 
-    _onCardActiveState: function(e) {     
+    _onCardActiveState: function(e) {
       this.childActive = e.detail.value;
-      
+
       // *todo* we need a customizable solution, this currently only handles cisco UC and theme
-      this.$.wrapper.classList.toggle("revealed", this.childActive);       
-      
+      this.$.wrapper.classList.toggle("revealed", this.childActive);
+
     },
 
     _onHostHover: function (e) {
@@ -354,13 +354,13 @@
     },
     _stateChanged: function (hover, childActive) {
       var newValue = hover || childActive;
-      
+
       if (this._state == undefined) this._state = newValue;
       if (this._state == newValue) return;
       this._state = newValue;
-     
+
       if (!this.__revealAble || this.__revealAble.length == 0 || Tangere.session.browser.mobile ) return;
-      for (var i = 0; i < this.__revealAble.length; i++) {       
+      for (var i = 0; i < this.__revealAble.length; i++) {
         this.__revealAble[i].revealed = newValue;
       }
     },
@@ -384,7 +384,7 @@
             formElement.hide = newValue;
           }
         });
-      }     
+      }
     },
 
     // when user switches to field settings tab, resize sensor is incorrectly initialized
@@ -423,7 +423,7 @@
 
       if (!schemaHelpers.isObject(newValue) || !schemaHelpers.isObject(newValue.properties)) {
         return;
-      }           
+      }
 
       // figure out the list of the elements that should be imported
       schemaHelpers.initializeCentralArrayOfComponents();
@@ -487,7 +487,7 @@
 
           // construct elemHref
           var compUrl = this.resolveUrl("../");
-      
+
           if (document.URL.indexOf("/elements/designer-element/") >= 0) {
             compUrl = "/components/";
           }
@@ -658,7 +658,7 @@
         }
 
         // if default value is not null or undefined and regular value is null or undefined
-        // loading initial value will trigger value-changed event to update .data if defaultValue is valid        
+        // loading initial value will trigger value-changed event to update .data if defaultValue is valid
         if (schemaHelpers.notNullOrEmpty(defaultValue) && schemaHelpers.isNullOrEmpty(value)) {
           formElement.value = defaultValue;
 
@@ -724,13 +724,13 @@
         }
         xgridcols = displayType === "section" ? 12 : xgridcols;
 
-        // special handling for at-core-view modelRoot 
+        // special handling for at-core-view modelRoot
         if (displayType == "at-core-view") {
           if (!propertyDefinition.modelRoot) propertyDefinition.modelRoot = "state.model"; // default is state.model
           if (propertyDefinition.modelRoot == ".") propertyDefinition.modelRoot = "";           // . == empty modelRoot
         }
 
-        // create element for field        
+        // create element for field
         formElement = schemaHelpers.createElement(propertyName, displayType, propertyDefinition);
         Polymer.dom(formElement).setAttribute('id', propertyName);
 
@@ -957,14 +957,14 @@
 
         // ignore properties without listeners
         if (!propDef.actionListeners) continue;
-                
-        // fix issue that empty listener [] might be saved as [ "" ]        
+
+        // fix issue that empty listener [] might be saved as [ "" ]
         if (actionListeners.length == 1 && actionListeners[0] === "") {
           actionListeners = [];
         }
 
 
-        // if no listeners are specified then listen for _all per default 
+        // if no listeners are specified then listen for _all per default
         if (actionListeners.length == 0) {
           actionListeners.push("_all");
         }
