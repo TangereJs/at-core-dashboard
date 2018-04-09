@@ -396,6 +396,26 @@
       coreForm.updateLayout(currWidth);
     },
 
+    _isObject: function (obj) {
+      return Object.prototype.toString.apply(obj) === "[object Object]";
+    },
+
+    _isFunction: function (obj) {
+      return Object.prototype.toString.apply(obj) === "[object Function]";
+    },
+
+    refresh: function () {
+      if (!this._isObject(this.schema) || !this._isObject(this.schema.properties)) return;
+      var propertyNames = Object.getOwnPropertyNames(this.schema.properties);
+
+      propertyNames.forEach(function (propName) {
+        var elt = this.getElement(propName);
+        if (elt && this._isFunction(elt.refresh)) {
+          elt.refresh();
+        }
+      }.bind(this));
+    },
+
     _schemaChanged: function (newValue) {
       var schemaHelpers = window.schemaHelpers;
       var self = this;
