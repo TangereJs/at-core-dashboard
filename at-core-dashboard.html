@@ -753,6 +753,11 @@
         formElement = schemaHelpers.createElement(propertyName, displayType, propertyDefinition);
         Polymer.dom(formElement).setAttribute('id', propertyName);
 
+        // copy .schema to new element if it provide a .schema property
+        if (typeof formElement.schema != "undefined") {
+          formElement.schema = this.schema;
+        }
+
         // maintain list of element which contain revealable elements
         if (!this.__revealAble) this.__revealAble = [];
         if (typeof formElement.revealed == "boolean") {
