@@ -11,7 +11,7 @@
 <link rel="import" href="../tangere/at-actionhandler-behavior.html">
 <link rel="import" href="../at-core-modal/at-core-modal.html">
 <link rel="import" href="../at-core-api-post/at-core-api-post.html">
-
+<link rel="import" href="../at-core-modal-element/at-core-modal-element.html">
 
 <dom-module id="at-core-dashboard">
   <template>
@@ -98,6 +98,7 @@
     </div>
     <content></content>
     <at-core-modal id="dialog"></at-core-modal>
+    <at-core-modal-element id="modal" on-value-changed="_modalValueChanged"></at-core-modal-element>
   </template>
 </dom-module>
 
