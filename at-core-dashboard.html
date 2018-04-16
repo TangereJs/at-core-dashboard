@@ -276,7 +276,18 @@
       'mouseenter': '_onHostHover',
       'focus': '_onHostHover',   // win touch, focus implies hover
       'mouseleave': '_onHostUnhover',
-      'card-active': '_onCardActiveState'
+      'card-active': '_onCardActiveState',
+      'notify': '_onNotify'
+    },
+
+    _onNotify: function(e) {    
+
+      var event = this._createEventObject(e.detail.event, null, null, null, this.data);
+      this._invokeActionListeners(event);
+
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
     },
 
     _onCardActiveState: function(e) {
