@@ -977,8 +977,8 @@
         var propDef = properties[propName];
         var element = this.getElement(propName); // element on which actionListener function will be called
 
-        var actionListeners;
-
+        var actionListeners = [];
+    
         if (propName == event.detail.srcName) {
           continue; // skip, element cannot listen to self
         }
@@ -991,18 +991,14 @@
             actionListeners = []; // convert empty string into empty array
           }
         } else {
-          actionListeners = propDef.actionListeners;
+          actionListeners = propDef.actionListeners || [];
         }
-
-        // ignore properties without listeners
-        if (!propDef.actionListeners) continue;
-
+                
         // fix issue that empty listener [] might be saved as [ "" ]
         if (actionListeners.length == 1 && actionListeners[0] === "") {
           actionListeners = [];
         }
-
-
+        
         // if no listeners are specified then listen for _all per default
         if (actionListeners.length == 0) {
           actionListeners.push("_all");
