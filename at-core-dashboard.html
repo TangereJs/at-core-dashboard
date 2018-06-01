@@ -476,8 +476,9 @@
 
         if (!mapping) {
           // element is not loaded; schedule it for importHref
-          propDef.displayType = displayType;
-          nonImportedElements.push(propDef);
+          var scheduledPropDef = JSON.parse(JSON.stringify(propDef));
+          scheduledPropDef.displayType = displayType;
+          nonImportedElements.push(scheduledPropDef);
         }
 
         if (displayType !== 'section') {
