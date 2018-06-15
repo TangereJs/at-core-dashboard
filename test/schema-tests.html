@@ -22,7 +22,6 @@
   <link rel="import" href="../../at-silver-transform/at-silver-transform.html">
   <link rel="import" href="../at-core-dashboard.html">
 
-
 </head>
 
 <body>
@@ -79,33 +78,44 @@
       // }
       var data = {};
 
-      test('are elements from schema present on dashboard', function() {
+      test('are elements from schema present on dashboard', function(done) {
         var dashboard = fixture('schemaTests');
+        dashboard.addEventListener('rendered', handleRenderedEvent);
         dashboard.schema = schema;
-        //"chartCore4",
-        var elementNames = ["text1", "date2", "daterange3", "chartStrudel5", "dashboardEcho6"];
 
-        elementNames.forEach(function(name, index) {
-          var element = dashboard.getElement(name);
-          assert.isNotNull(element, "element " + name + " not present on dashboard");
-        });
+        function handleRenderedEvent() {
+          dashboard.removeEventListener('rendered', handleRenderedEvent);
+          //"chartCore4",
+          var elementNames = ["text1", "date2", "daterange3", "chartStrudel5", "dashboardEcho6"];
+
+          elementNames.forEach(function(name, index) {
+            var element = dashboard.getElement(name);
+            assert.isNotNull(element, "element " + name + " not present on dashboard");
+          });
+          done();
+        }
       });
 
-      test('is initial data set correctly', function() {
+      test('is initial data set correctly', function(done) {
         var dashboard = fixture('schemaTests');
+        dashboard.addEventListener('rendered', handleRenderedEvent);
         dashboard.schema = schema;
-        dashboard.data = data;
+        
+        function handleRenderedEvent() {
+          dashboard.data = data;
 
-        var element = dashboard.getElement("text1");
-        assert.equal(element.value, "", "text1 value not set correctly");
+          var element = dashboard.getElement("text1");
+          assert.equal(element.value, "", "text1 value not set correctly");
 
-        element = dashboard.getElement("date2");
-        assert.equal(element.value, "", "date2 value not set correctly");
+          element = dashboard.getElement("date2");
+          assert.equal(element.value, "", "date2 value not set correctly");
 
-        element = dashboard.getElement("daterange3");
-        element.startDate = "01-05-2016";
-        element.endDate = "31-05-2016";
-        assert.equal(element.value, element.T("{0}/{1}", "01-05-2016", "31-05-2016"), "daterange3 value not set correctly");
+          element = dashboard.getElement("daterange3");
+          element.startDate = "01-05-2016";
+          element.endDate = "31-05-2016";
+          assert.equal(element.value, element.T("{0}/{1}", "01-05-2016", "31-05-2016"), "daterange3 value not set correctly");
+          done();
+        }
       });
 
       var schemaAL = {
@@ -177,38 +187,40 @@
 
       test('do action listeners work correctly', function(done) {
         var dashboard = fixture('schemaTests');
+        dashboard.addEventListener('rendered', handleRenderedEvent);
         dashboard.schema = schemaAL;
-        dashboard.data = dataAL;
 
-        var element = dashboard.getElement("text1");
-        assert.equal(element.value, "", "text1 value not set correctly");
+        function handleRenderedEvent() {
+          dashboard.data = dataAL;
 
-        element = dashboard.getElement("text2");
-        assert.equal(element.value, "", "text2 value not set correctly");
+          var element = dashboard.getElement("text1");
+          assert.equal(element.value, "", "text1 value not set correctly");
 
-        var transform1 = dashboard.getElement('transform1');
-        assert.equal(transform1.value, "", "transform1 value not set correctly");
+          element = dashboard.getElement("text2");
+          assert.equal(element.value, "", "text2 value not set correctly");
 
-        var transform2 = dashboard.getElement('transform2');
-        assert.equal(transform2.value, "", "transform2 value not set correctly");
+          var transform1 = dashboard.getElement('transform1');
+          assert.equal(transform1.value, "", "transform1 value not set correctly");
 
-        var transform3 = dashboard.getElement('transform3');
-        assert.equal(transform3.value, "", "transform2 value not set correctly");
+          var transform2 = dashboard.getElement('transform2');
+          assert.equal(transform2.value, "", "transform2 value not set correctly");
 
-        flush(function () {
-          // var echo1 = dashboard.getElement('dashboardEcho1');
-          // var div = Polymer.dom(echo1.$.insertPoint).children[0];
-          // assert.equal(div.textContent, "");
-          //
-          // var echo2 = dashboard.getElement('dashboardEcho2');
-          // div = Polymer.dom(echo2.$.insertPoint).children[0];
-          // assert.equal(div.textContent, "");
-          //
-          // var echo3 = dashboard.getElement('dashboardEcho3');
-          // div = Polymer.dom(echo3.$.insertPoint).children[0];
-          // assert.equal(div.textContent, "");
+          var transform3 = dashboard.getElement('transform3');
+          assert.equal(transform3.value, "", "transform2 value not set correctly");
+
           done();
-        });
+        }
+        // var echo1 = dashboard.getElement('dashboardEcho1');
+        // var div = Polymer.dom(echo1.$.insertPoint).children[0];
+        // assert.equal(div.textContent, "");
+        //
+        // var echo2 = dashboard.getElement('dashboardEcho2');
+        // div = Polymer.dom(echo2.$.insertPoint).children[0];
+        // assert.equal(div.textContent, "");
+        //
+        // var echo3 = dashboard.getElement('dashboardEcho3');
+        // div = Polymer.dom(echo3.$.insertPoint).children[0];
+        // assert.equal(div.textContent, "");
 
       });
     });

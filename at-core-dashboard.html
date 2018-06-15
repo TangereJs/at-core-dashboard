@@ -430,6 +430,22 @@
       }.bind(this));
     },
 
+    // map legacy xtypes
+    // this list is also in at-core-form and at-form-complex
+    _displayTypeToFormElementMapping: {
+      date: "at-form-date",
+      time: "at-form-date",
+      datetime: "at-form-date",
+      daterange: "at-form-daterange",
+      string: "at-form-text",
+      section: "at-form-section"
+    },
+
+    _getElementNameFromDisplayType(displayType) {
+      var elementName = this._displayTypeToFormElementMapping[displayType];
+      return elementName;
+    },
+
     _schemaChanged: function(newValue) {
       var schemaHelpers = window.schemaHelpers;
       var self = this;
@@ -459,7 +475,6 @@
       }
 
       // figure out the list of the elements that should be imported
-      schemaHelpers.initializeCentralArrayOfComponents();
       var _properties = newValue.properties;
       var _propertyNames = Object.getOwnPropertyNames(newValue.properties);
       var nonImportedElements = [];
@@ -472,12 +487,15 @@
       _propertyNames.forEach(function(propName, index) {
         var propDef = _properties[propName];
         var displayType = schemaHelpers.getDisplayType(propDef, []);
-        var mapping = schemaHelpers.findMapping(displayType);
+        var elementName = self._getElementNameFromDisplayType(displayType);
+        if (elementName == undefined) elementName = displayType;
 
-        if (!mapping) {
+        // propDef.default !== window is added to hanlde cases from polymer behaviors
+        // where initial value for properities is window
+        if (propDef.default !== window) {
           // element is not loaded; schedule it for importHref
           var scheduledPropDef = JSON.parse(JSON.stringify(propDef));
-          scheduledPropDef.displayType = displayType;
+          scheduledPropDef.elementName = elementName;
           nonImportedElements.push(scheduledPropDef);
         }
 
@@ -498,17 +516,6 @@
       this._nonGroupedElements = nonGroupedElements;
       this._formGroups = formGroups;
 
-      // map legacy xtypes
-      // this list is also in at-core-form and at-form-complex
-      var displayTypeToFormElementMapping = {
-        date: "at-form-date",
-        time: "at-form-date",
-        datetime: "at-form-date",
-        daterange: "at-form-daterange",
-        string: "at-form-text",
-        section: "at-form-section"
-      };
-
       if (nonImportedElements.length) {
         var pendingImportsCount = nonImportedElements.length;
 
@@ -516,9 +523,7 @@
           // To construct elemHref we need static information about what (type, xtype) maps to which at-form element
           // Right now, only $meta in each element contains this information and central array of components is populated with $meta information
           // So, to dynamically importHref needed elements we need to introduce static information (which will just be a copy paste from $meta of each element)
-          var displayType = propDef.displayType;
-          var elementName = displayTypeToFormElementMapping[displayType];
-          if (elementName == undefined) { elementName = displayType; }
+          var elementName = propDef.elementName;
 
           // construct elemHref
           var compUrl = this.resolveUrl("../");
@@ -531,6 +536,11 @@
             compUrl = window.ComponentsBase;
           }
           var elemHref = compUrl + elementName + "/" + elementName + ".html";
+
+          // special handling for dashboard-echo because its in the same folder where at-core-dashboard is
+          if (elementName == "at-core-dashboard-echo") {
+            elemHref = compUrl + "at-core-dashboard/" + elementName + ".html";
+          }
 
           self.importHref(elemHref, function(e) {
             // import was successful
@@ -764,9 +774,12 @@
           if (!propertyDefinition.modelRoot) propertyDefinition.modelRoot = "state.model"; // default is state.model
           if (propertyDefinition.modelRoot == ".") propertyDefinition.modelRoot = "";           // . == empty modelRoot
         }
+        
+        var elementName = self._getElementNameFromDisplayType(displayType);
+        if (elementName == undefined) elementName = displayType;
 
         // create element for field
-        formElement = schemaHelpers.createElement(propertyName, displayType, propertyDefinition);
+        formElement = schemaHelpers.createElement(propertyName, displayType, propertyDefinition, elementName);
         Polymer.dom(formElement).setAttribute('id', propertyName);
 
         // copy .schema to new element if it provide a .schema property
