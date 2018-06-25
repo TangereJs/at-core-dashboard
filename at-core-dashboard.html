@@ -431,14 +431,34 @@
     },
 
     // map legacy xtypes
-    // this list is also in at-core-form and at-form-complex
+    // this list is also in at-form-complex and at-core-dashboard
+    // DO NOT EXTEND THIS LIST; for new elements xtype should be the element name, so there is no need to new elements to be in this list
     _displayTypeToFormElementMapping: {
+      array: "at-form-array",
+      boolean: "at-form-checkbox",
+      toggle: "at-form-checkbox",
+      code: "at-form-codemirror",
+      json: "at-form-codemirror",
+      object: "at-form-complex",
       date: "at-form-date",
       time: "at-form-date",
       datetime: "at-form-date",
       daterange: "at-form-daterange",
+      file: "at-form-file",
+      html: "at-form-html",
+      image: "at-form-image",
+      'enum': "at-form-lookup",
+      lookup: "at-form-lookup",
+      marked: "at-form-markdown",
+      password: "at-form-password",
+      number: "at-form-number",
+      radio: "at-form-radio",
+      section: "at-form-section",
+      state: "at-form-state",
       string: "at-form-text",
-      section: "at-form-section"
+      textarea: "at-form-textarea",
+      cron: "at-form-cron",
+      random: "at-form-random"
     },
 
     _getElementNameFromDisplayType(displayType) {
