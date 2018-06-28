@@ -580,8 +580,8 @@
 
     _render: function() {
 
-      this.toggleClass("desktop", Tangere.session.browser.desktop, this.$.container);
-      this.toggleClass("mobile", Tangere.session.browser.mobile, this.$.container);
+      this.toggleClass("desktop", Tangere.session.browser.desktop, this.$.insertPoint);
+      this.toggleClass("mobile", Tangere.session.browser.mobile, this.$.insertPoint);
 
       var self = this;
       var schemaHelpers = window.schemaHelpers;
