@@ -185,6 +185,11 @@
         notify: true,
         value: ""
       },
+      renderMode: {
+        type: String,
+        notify: true,
+        value: ""
+      },
       service: {
         type: String,
         value: "",
@@ -1073,6 +1078,11 @@
         return; // ignore change
       }
 
+      // special case - change in footer value changes renderMode as well
+      if (changedElement.tagName == "AT-CARBON-CARD-FOOTER") {
+        this.renderMode = value ? "expanded" : "collapsed";        
+      }
+
       this.data[property] = value;
 
       var event = this._createEventObject(property + "-changed", property, changedElement, value, this.data);
@@ -1094,6 +1104,7 @@
     _createEventObject: function(type, srcName, srcElement, value, data) {
       return {
         type: type,
+        container: this,
         detail: {
           srcName: srcName,
           parameter: value,
