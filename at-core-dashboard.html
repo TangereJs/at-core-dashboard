@@ -91,6 +91,30 @@
         min-height: 16px;
         visibility: hidden;
       }
+
+      /* TEMPORARY SOLUTION. REMOVE WHEN A BETTER SOLUTION IS AVAILABLE */
+      /* 
+        at-actionhandler-behavior and at-taphandler-behavior define styles as global css rules
+        styles from at-actionhandler-behavior and at-taphandler-behavior are inlined here, because at-core-dashboard's shadowRoot acts as boundary for css rules
+        there is a specific use case on /App#!at-now/start-now?mode=workplace where these classes are used to control what is visible on a card when card uses at-core-view to render its content dynamically
+       */
+      :host(.collapsed) .expanded-only {
+        display: none !important;
+      }
+
+      :host(.expanded) .collapsed-only {
+        display: none !important;
+      }
+
+      :host(.desktop) .mobile-only {
+        display: none !important;
+      }
+
+      :host(.mobile) .desktop-only {
+        display: none !important;
+      }
+      /* END OF TEMPORARY SOLUTION. REMOVE WHEN A BETTER SOLUTION IS AVAILABLE */
+
     </style>
     <div class="at-core-dashboard-wrapper wrapper card" id="wrapper">
       <at-core-resize-sensor id="resizeSensor"></at-core-resize-sensor>
