@@ -1,6 +1,6 @@
 {
   "name": "at-core-dashboard",
-  "version": "0.0.1.537",
+  "version": "0.0.1.538",
   "private": true,
   "dependencies": {
     "tangere": "TangereJs/tangere#master",

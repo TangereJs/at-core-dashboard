@@ -420,11 +420,8 @@
         var properties = this.schema.properties;
         var propNames = Object.getOwnPropertyNames(properties);
         propNames.forEach(function(propName, index) {
-          var formElement = Polymer.dom(insertPoint).querySelector('#' + propName);
-          if (formElement && formElement.parentElement) {
-            Polymer.dom(formElement.parentElement).classList.remove('hidden');
-            formElement.hide = newValue;
-          }
+          var formElement = Polymer.dom(insertPoint).querySelector('#' + propName);          
+            if(formElement.hide != undefined) formElement.hide = newValue;          
         });
       }
     },
@@ -906,16 +903,12 @@
         }
 
         // if at-core-dashboard is hidden, element should be hidden as well
-        if (self.hide) {
+        if (self.hide && formElement.hide != undefined) {
           formElement.hide = true;
         }
 
         // append paper element to its container
         Polymer.dom(fieldContainer).appendChild(formElement);
-
-        if (formElement.hide) {
-          Polymer.dom(fieldContainer).classList.add('hidden');
-        }
 
         // add container to as child to insertPoint
         Polymer.dom(fieldsFragment).appendChild(fieldContainer);
