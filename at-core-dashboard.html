@@ -421,7 +421,11 @@
         var propNames = Object.getOwnPropertyNames(properties);
         propNames.forEach(function(propName, index) {
           var formElement = Polymer.dom(insertPoint).querySelector('#' + propName);          
-            if(formElement.hide != undefined) formElement.hide = newValue;          
+          // if at-core-dashboard didn't complete rendering formElement will be null
+          // its safe to return here, because during schema rendering .hide is set correctly by inspecting the value of at-core-dashboard.hide property
+          // so each form element will be hidden correctly regardless of which happens / completes first - rendering or hideChanged
+          if (formElement == null) return;
+          if(formElement.hide != undefined) formElement.hide = newValue;
         });
       }
     },
