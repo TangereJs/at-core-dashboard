@@ -64,11 +64,11 @@
             xtype: "at-chart-strudel",
             title: "Chart strudel 5"
           },
-          dashboardEcho6: {
-            type: 'element',
-            xtype: "at-core-dashboard-echo",
-            title: "Dashboard echo 6"
-          }
+          // dashboardEcho6: {
+          //   type: 'element',
+          //   xtype: "at-core-dashboard-echo",
+          //   title: "Dashboard echo 6"
+          // }
         }
       };
 
@@ -86,7 +86,7 @@
         function handleRenderedEvent() {
           dashboard.removeEventListener('rendered', handleRenderedEvent);
           //"chartCore4",
-          var elementNames = ["text1", "date2", "daterange3", "chartStrudel5", "dashboardEcho6"];
+          var elementNames = ["text1", "date2", "daterange3", "chartStrudel5"]; //, "dashboardEcho6"];
 
           elementNames.forEach(function(name, index) {
             var element = dashboard.getElement(name);
