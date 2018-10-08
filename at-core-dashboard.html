@@ -1083,7 +1083,7 @@
             continue;
           }
 
-          if (isFunction(element.actionListener)) {
+          if (element && isFunction(element.actionListener)) {
             element.actionListener(event);
           }
 
