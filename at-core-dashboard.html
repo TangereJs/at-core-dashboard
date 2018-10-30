@@ -382,6 +382,12 @@
     updateLayout: function(newWidth, oldWidth) {
       if (isNaN(newWidth)) { return; }
       
+      var desktop = Tangere.session.browser.desktop;
+      if (newWidth < 400) desktop = false; // switch to mobile layout on desktop when card becomes to small
+
+      this.toggleClass("desktop", desktop, this.$.wrapper);
+      this.toggleClass("mobile", !desktop, this.$.wrapper);
+
       if (newWidth < 600) {
         this.layout = "vertical";
       } else {
