@@ -934,22 +934,21 @@
         if (formElement.tagName.toLowerCase() == "at-carbon-card-title" && self.schema.$type == "card") {
           formElement.addEventListener('card-display-size-changed', function(event) {
             var value = event.detail.value;
-
-            var insertPointChildren = Polymer.dom(self.$.insertPoint).children;
-
-            // insert point should have 4 children
-            if (insertPointChildren.length != 4) {
-              console.log("insert point doesn't have expected number of children");
-              return;
-            }
             var isMinimized = value == 'minimized';
-            
-            // start from 1 because we want to skip at-carbon-card-title
-            for (var i=1; i < insertPointChildren.length - 1; i++) {
-              var child = insertPointChildren[i];
-              self.toggleAttribute('hidden', isMinimized, child);
-            }
 
+            var titleElt = Polymer.dom(self.$.insertPoint).querySelector('at-carbon-card-title');
+            var titleEltParent = Polymer.dom(titleElt).parentNode;
+
+            var nextEltSibling = Polymer.dom(titleEltParent).nextSibling;
+
+            while(nextEltSibling != null) {
+              self.toggleAttribute('hidden', isMinimized, nextEltSibling);
+              
+              nextEltSibling = Polymer.dom(nextEltSibling).nextSibling;
+              
+              // we do not want to hide clear float div
+              if (Polymer.dom(nextEltSibling).classList.contains('clear-float')) break;
+            }
           });
         }
 
