@@ -299,7 +299,13 @@
         type: String,
         value: "",
         observer: '_activeTabChanged'
+      },
+
+      minimized: {
+        type: String,
+        value: false
       }
+
     },
 
 
@@ -797,6 +803,13 @@
       Polymer.dom(clearfixDiv).classList.add('clear-float');
       Polymer.dom(fieldsContainer).appendChild(clearfixDiv);
 
+      // 
+      // MINIMIZED HANDLING 
+      // 
+      if (this.minimized) {
+        this._applyMinimizedValue(this.minimized);
+      }
+
       self.fire('rendered', this, { bubbles: false });
 
       //console.log("fire content-changed");
@@ -929,26 +942,22 @@
         }
 
         // 
+        // apply current value of this.minimized to at-carbon-card-title, so that buttons render correctly
+        // 
+        if (formElement.tagName.toLowerCase() == "at-carbon-card-title") {
+          formElement.minimized = this.minimized;
+        }
+
+        // 
         // Listen to card display size change events
         // 
         if (formElement.tagName.toLowerCase() == "at-carbon-card-title" && self.schema.$type == "card") {
-          formElement.addEventListener('card-display-size-changed', function(event) {
+          formElement.addEventListener('minimized-changed', function(event) {
             var value = event.detail.value;
             var isMinimized = value == 'minimized';
+            self.minimized = isMinimized;
 
-            var titleElt = Polymer.dom(self.$.insertPoint).querySelector('at-carbon-card-title');
-            var titleEltParent = Polymer.dom(titleElt).parentNode;
-
-            var nextEltSibling = Polymer.dom(titleEltParent).nextSibling;
-
-            while(nextEltSibling != null) {
-              self.toggleAttribute('hidden', isMinimized, nextEltSibling);
-              
-              nextEltSibling = Polymer.dom(nextEltSibling).nextSibling;
-              
-              // we do not want to hide clear float div
-              if (Polymer.dom(nextEltSibling).classList.contains('clear-float')) break;
-            }
+            self._applyMinimizedValue(isMinimized);
           });
         }
 
@@ -1290,6 +1299,26 @@
       });
 
       return result;
+    },
+
+    // 
+    // Helper function to apply minimized value (this.minimized) to element's containers bellow the container of at-carbon-card-title
+    // always call this after all elements have been rendered
+    // 
+    _applyMinimizedValue: function(minimized) {
+      var titleElt = Polymer.dom(this.$.insertPoint).querySelector('at-carbon-card-title');
+      var titleEltParent = Polymer.dom(titleElt).parentNode;
+
+      var nextEltSibling = Polymer.dom(titleEltParent).nextSibling;
+      
+      while (nextEltSibling != null) {
+        this.toggleAttribute('hidden', minimized, nextEltSibling);
+
+        nextEltSibling = Polymer.dom(nextEltSibling).nextSibling;
+
+        // we do not want to hide clear float div
+        if (Polymer.dom(nextEltSibling).classList.contains('clear-float')) break;
+      }
     }
 
   });
