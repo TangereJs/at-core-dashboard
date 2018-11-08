@@ -12,6 +12,7 @@
 <link rel="import" href="../at-core-modal/at-core-modal.html">
 <link rel="import" href="../at-core-api-post/at-core-api-post.html">
 <link rel="import" href="../at-core-modal-element/at-core-modal-element.html">
+<link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
 
 <dom-module id="at-core-dashboard">
   <template>
@@ -26,6 +27,10 @@
 
       :host * {
         box-sizing: border-box;
+      }
+
+      * [hidden] {
+        display: none !important;
       }
 
       .revealed.revealed.revealed.revealed.revealed.revealed.revealed {
@@ -151,7 +156,7 @@
   'use strict';
   Polymer({
     is: 'at-core-dashboard',
-    behaviors: [Tangere.behavior.handleLink, Tangere.behaviors.i18n, Tangere.behaviors.actionhandler],
+    behaviors: [Tangere.behavior.handleLink, Tangere.behaviors.i18n, Tangere.behaviors.actionhandler, Polymer.IronResizableBehavior ],
     hostAttributes: {
       tabindex: 0
     },
@@ -452,14 +457,17 @@
         var properties = this.schema.properties;
         var propNames = Object.getOwnPropertyNames(properties);
         propNames.forEach(function(propName, index) {
-          var formElement = Polymer.dom(insertPoint).querySelector('#' + propName);          
+          var formElement = Polymer.dom(insertPoint).querySelector('#' + propName);
           // if at-core-dashboard didn't complete rendering formElement will be null
           // its safe to return here, because during schema rendering .hide is set correctly by inspecting the value of at-core-dashboard.hide property
           // so each form element will be hidden correctly regardless of which happens / completes first - rendering or hideChanged
           if (formElement == null) return;
-          if(formElement.hide != undefined) formElement.hide = newValue;
+          if(formElement.properties.hasOwnProperty('hide')) formElement.hide = newValue;
         });
       }
+
+      // notify children that hide status has changed
+      this.notifyResize();
     },
 
     // when user switches to field settings tab, resize sensor is incorrectly initialized
@@ -1319,6 +1327,8 @@
         // we do not want to hide clear float div
         if (Polymer.dom(nextEltSibling).classList.contains('clear-float')) break;
       }
+
+      this.notifyResize();
     }
 
   });
