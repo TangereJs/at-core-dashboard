@@ -321,7 +321,15 @@
     set model(newValue) {
       this.data.model = newValue;
       this.$.post.url = newValue._card ? newValue._card.ServiceUrl : "";
-      this.dataChanged(this.data);
+      
+      if (!this._firstTimeDataChanged) {
+        this._firstTimeDataChanged = true;
+        this.dataChanged(this.data);
+      
+      } else {
+        var event = this._createEventObject("_update", null, null, null, this.data);
+        this._invokeActionListeners(event);
+      }
     },
 
     set valid(newValue) { },
