@@ -321,9 +321,8 @@
     set model(newValue) {
       this.data.model = newValue;
       this.$.post.url = newValue._card ? newValue._card.ServiceUrl : "";
-      
-      if (!this._firstTimeDataChanged) {
-        this._firstTimeDataChanged = true;
+
+      if (!this._initialViewRendered) {
         this.dataChanged(this.data);
       
       } else {
