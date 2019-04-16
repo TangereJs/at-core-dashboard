@@ -141,6 +141,8 @@
       /* END OF TEMPORARY SOLUTION. REMOVE WHEN A BETTER SOLUTION IS AVAILABLE */
 
     </style>
+    <at-core-signals id="coreSignals" on-state-changed="_handleStateChanged"></at-core-signals>
+
       <at-core-api-post id="post" on-api-response="_apiResponse"></at-core-api-post>
     <div class="at-core-dashboard-wrapper wrapper card" id="wrapper">
       <at-core-resize-sensor id="resizeSensor"></at-core-resize-sensor>
@@ -242,6 +244,11 @@
         type: String,
         value: "",
         notify: true
+      },
+
+      stateName: {
+        type: String,
+        value: ""
       },
       /**
        * at-core-dashboard can now have a one column or two column layout <br/>
@@ -346,6 +353,15 @@
       'mouseleave': '_onHostUnhover',
       'card-active': '_onCardActiveState',
       'notify': '_onNotify'
+    },
+
+    _handleStateChanged: function(e) {
+      if(this.stateName == e.detail.stateName) {
+        var data = e.detail.data;
+
+        var event = this._createEventObject("_update", null, null, null, data);
+        this._invokeActionListeners(event);
+      }
     },
 
     _onNotify: function(e) {
