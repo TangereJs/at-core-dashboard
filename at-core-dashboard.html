@@ -14,6 +14,7 @@
 <link rel="import" href="../at-core-modal-element/at-core-modal-element.html">
 <link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../at-core-theme/at-core-theme-global.html">
+<link rel="import" href="../at-carbon-alert/at-carbon-alert.html">
 
 <dom-module id="at-core-dashboard">
   <template>
@@ -152,6 +153,7 @@
       <div id="insertPoint"></div>
     </div>
     <at-core-modal id="dialog"></at-core-modal>
+    <at-carbon-alert id="alertElement" cancel-button="Cancel" confirm-button="OK"></at-carbon-alert>
     <at-core-modal-element id="modal" on-value-changed="_modalValueChanged"></at-core-modal-element>
   </template>
 </dom-module>
