@@ -145,8 +145,7 @@
 
     </style>
     <at-core-signals id="coreSignals" on-state-changed="_handleStateChanged"></at-core-signals>
-
-      <at-core-api-post id="post" on-api-response="_apiResponse"></at-core-api-post>
+    <at-core-api-post id="post" on-api-response="_apiResponse"></at-core-api-post>
     <div class="at-core-dashboard-wrapper wrapper card" id="wrapper">
       <at-core-resize-sensor id="resizeSensor"></at-core-resize-sensor>
       <div class="clear-float"></div>
@@ -242,7 +241,8 @@
       renderMode: {
         type: String,
         notify: true,
-        value: ""
+        value: "",
+        observer: "_renderModeChanged"
       },
       service: {
         type: String,
@@ -332,7 +332,7 @@
     set model(newValue) {
       this.data.model = newValue;
       this.$.post.url = newValue._card ? newValue._card.ServiceUrl : "";
-
+      if (!this.$.post.url) debugger;
       if (!this._initialViewRendered) {
         this.dataChanged(this.data);
       
@@ -359,6 +359,7 @@
       'notify': '_onNotify'
     },
 
+    
     _handleStateChanged: function(e) {
       if(this.stateName == e.detail.stateName) {
         var data = e.detail.data;
@@ -1181,6 +1182,11 @@
       }
     },
 
+    _renderModeChanged: function (n, o) {      
+      if (o == undefined || !n || !this._initialViewRendered) return;      
+      var event = this._createEventObject("_renderModeChanged", null, null, null, this.data);
+      this._invokeActionListeners(event);
+    },
     /*
      * This function is called on value-changed event for any element on the form
      * property is property name
@@ -1193,10 +1199,13 @@
         return; // ignore change
       }
 
+      /* NOT NEEDED ANY LONGER - containerMode now auto propagetes to renderMode
       // special case - change in footer value changes renderMode as well
       if (changedElement.tagName == "AT-CARBON-CARD-FOOTER") {
+        debugger;
         this.renderMode = value ? "expanded" : "collapsed";        
       }
+      */
 
       this.data[property] = value;
 
