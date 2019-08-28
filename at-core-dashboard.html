@@ -332,11 +332,12 @@
     set model(newValue) {
       this.data.model = newValue;
       this.$.post.url = newValue._card ? newValue._card.ServiceUrl : "";
-      if (!this.$.post.url) debugger;
+      if (newValue._card && newValue._card.expanded == undefined) newValue._card.expanded = false;
+
       if (!this._initialViewRendered) {
-        this.dataChanged(this.data);
-      
+        this.dataChanged(this.data);      
       } else {
+        this._executeAction("update");
         var event = this._createEventObject("_update", null, null, null, this.data);
         this._invokeActionListeners(event);
       }
@@ -1183,7 +1184,9 @@
     },
 
     _renderModeChanged: function (n, o) {      
-      if (o == undefined || !n || !this._initialViewRendered) return;      
+      if (o == undefined || !n || !this._initialViewRendered) return;
+      this.model._card.expanded = (n == "expanded");
+      this._executeAction("update");
       var event = this._createEventObject("_renderModeChanged", null, null, null, this.data);
       this._invokeActionListeners(event);
     },
@@ -1210,7 +1213,6 @@
       this.data[property] = value;
 
       var event = this._createEventObject(property + "-changed", property, changedElement, value, this.data);
-
       this._invokeActionListeners(event);
 
       this.fire('data-changed', {
