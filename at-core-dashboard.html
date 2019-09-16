@@ -871,8 +871,7 @@
       var event = this._createEventObject("_start", null, null, null, this.data);
       this._invokeActionListeners(event);
 
-      this._initialViewRendered = true;
-
+      this._initialViewRendered = true;    
     },
 
     _renderSingleElement: function(propertyName, propertyDefinition, divPrototype, fieldsFragment) {
@@ -1174,6 +1173,8 @@
           if (listenerName != "_all" && listenerName != event.type && listenerName + "-changed" != event.type) {
             continue;
           }
+
+          if (!this._initialViewRendered && event.type != "_start") continue; // no update events before _start 
 
           if (element && isFunction(element.actionListener)) {
             element.actionListener(event);
