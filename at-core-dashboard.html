@@ -419,12 +419,15 @@
       });
     },
 
-    updateLayout: function(newWidth, oldWidth) {
+    updateLayout: function(newWidth) {
+
       if (isNaN(newWidth)) { return; }
-      
+      if (this._layoutWidth == newWidth) return;
+      this._layoutWidth = newWidth;
+
       var desktop = Tangere.session.browser.desktop;
       if (newWidth < 400) desktop = false; // switch to mobile layout on desktop when card becomes to small
-
+      
       this.toggleClass("desktop", desktop, this.$.wrapper);
       this.toggleClass("mobile", !desktop, this.$.wrapper);
 
