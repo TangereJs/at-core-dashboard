@@ -431,6 +431,8 @@
       this.toggleClass("desktop", desktop, this.$.wrapper);
       this.toggleClass("mobile", !desktop, this.$.wrapper);
 
+      this.toggleClass("touchonly", Tangere.session.browser.touchonly, this.$.wrapper);
+
       if (newWidth < 600) {
         this.layout = "vertical";
       } else {
