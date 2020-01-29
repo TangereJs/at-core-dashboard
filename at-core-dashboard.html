@@ -417,6 +417,15 @@
         // console.log('at-core-dashboard new width: ' + newWidth + 'px');
         coreForm.updateLayout(newWidth);
       });
+
+      // requery small width e.g. after drop position
+      if (currWidth < 300) {
+        Tangere.asyncQueue.add("recompute attached", function () {
+          resizeSensor.reset();          
+          var currWidth = resizeSensor.queryWidth();
+          coreForm.updateLayout(currWidth);
+        }, this);
+      }
     },
 
     updateLayout: function(newWidth) {
