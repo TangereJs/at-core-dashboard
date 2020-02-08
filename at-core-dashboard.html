@@ -914,7 +914,7 @@
           if (!propertyDefinition.modelRoot) propertyDefinition.modelRoot = "state.model"; // default is state.model
           if (propertyDefinition.modelRoot == ".") propertyDefinition.modelRoot = "";           // . == empty modelRoot
         }
-        
+
         var elementName = self._getElementNameFromDisplayType(displayType);
         if (elementName == undefined) elementName = displayType;
 
@@ -922,7 +922,12 @@
         formElement = schemaHelpers.createElement(propertyName, displayType, propertyDefinition, elementName);
         Polymer.dom(formElement).setAttribute('id', propertyName);
         formElement._gid = (this._gid ? this._gid + "_" : "") + propertyName;
-        
+
+        // copy $meta.adatpiveCard if present and at-silver-adaptive.view is empty
+        if (displayType == "at-silver-adaptive" && !!this.schema.$meta && !!this.schema.$meta.adaptiveCard) {
+          if (formElement.view == "{}") formElement.view = this.schema.$meta.adaptiveCard;
+        }
+
         // copy .schema to new element if it provide a .schema property
         if (typeof formElement.schema != "undefined") {
           formElement.schema = this.schema;
