@@ -362,9 +362,8 @@
 
     
     _handleStateChanged: function(e) {
-      if(this.stateName == e.detail.stateName) {
+      if (this.stateName == e.detail.stateName) {
         var data = e.detail.data;
-
         var event = this._createEventObject("_update", null, null, null, data);
         this._invokeActionListeners(event);
       }
@@ -1136,13 +1135,23 @@
         return;  // view not yet rendered, so data is not really changed
       }
 
+      // console.info("at-core-dashboard dataChanged " + this.namePrefix + " " + newValue._hash);
+
       // render again with new data
       this._render();
 
     },
 
     // invoke listeners on all elements listening for event
-    _invokeActionListeners: function(event) {
+    _invokeActionListeners: function (event) {
+
+      // console.info("at-core-dashboard _invokeActionListeners " + this.namePrefix + " " + event.type + " " + event.detail.model.state.model._hash);
+
+      if (event.detail.model.state.model._hash) {
+        if (this["_hash" + event.type] == event.detail.model.state.model._hash) return; // ignore duplicate events for same data
+      }
+
+      this["_hash" + event.type] = event.detail.model.state.model._hash;
 
       var properties = this.schema.properties;
       var propertyNames = Object.getOwnPropertyNames(properties);
